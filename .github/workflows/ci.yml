@@ -40,7 +40,7 @@ jobs:
     - name: Build release
       run: cargo build --release
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: rechat-sender
         path: target/release/rechat-sender
