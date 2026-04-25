@@ -4,8 +4,6 @@ pub mod core;
 pub mod models;
 pub mod services;
 pub mod web;
-pub mod adapters;
-pub mod plugins;
 
 use std::cell::RefCell;
 
