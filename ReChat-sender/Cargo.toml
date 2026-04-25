@@ -1,0 +1,28 @@
+[package]
+name = "rechat-sender"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "rechat-sender"
+path = "src/main.rs"
+
+[lib]
+name = "rechat_sender"
+path = "src/lib.rs"
+
+[dependencies]
+actix-web = "4.4.0"
+tokio = { version = "1.32.0", features = ["full"] }
+redis = "0.24.0"
+rusqlite = "0.29.0"
+websocket = "0.26.5"
+tera = "1.19.0"
+serde = { version = "1.0.188", features = ["derive"] }
+serde_json = "1.0.107"
+uuid = { version = "1.7.0", features = ["v4"] }
+clap = "2.33.3"
+
+[dev-dependencies]
+cargo-tarpaulin = "0.22.0"
+tempfile = "3.10.1"
