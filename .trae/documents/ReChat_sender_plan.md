@@ -11,65 +11,64 @@
 - 项目名称：ReChat-server
 - 项目描述：ReChat 服务端，目前仅支持Windows（终端及可视化界面）
 - 用户请求：初始化 ReChat-sender 服务端
+- 技术要求：使用 Rust 语言，图形化界面基于 Web
 
 ## 2. 技术栈选择
 
 ### 2.1 后端语言
-- **Python 3.9+**：选择理由
-  - 跨平台支持，同时满足 Windows 环境要求
-  - 丰富的网络和异步编程库
-  - 适合快速开发服务端应用
-  - 拥有成熟的消息队列和网络通信库
+- **Rust**：选择理由
+  - 高性能、内存安全
+  - 跨平台支持，满足 Windows 环境要求
+  - 强大的并发处理能力
+  - 生态系统成熟，适合构建服务端应用
 
 ### 2.2 核心依赖
-- **FastAPI**：高性能异步 Web 框架，用于提供 API 接口
-- **Pydantic**：数据验证和设置管理
+- **Actix Web**：高性能异步 Web 框架，用于提供 API 接口和 Web 界面
+- **Tokio**：异步运行时
 - **Redis**：用于消息队列和缓存
 - **SQLite**：轻量级数据库，用于存储配置和状态
-- **websockets**：实时通信支持
-- **PyInstaller**：用于打包 Windows 可执行文件
+- **WebSocket**：实时通信支持
+- **Tera**：模板引擎，用于 Web 界面
 
 ### 2.3 开发工具
-- **Poetry**：依赖管理和项目构建
-- **Black**：代码格式化
-- **Pytest**：单元测试
+- **Cargo**：Rust 包管理和构建工具
+- **rustfmt**：代码格式化
+- **clippy**：代码质量检查
+- **cargo-tarpaulin**：测试覆盖率
 
 ## 3. 项目结构设计
 
 ```
 ReChat-sender/
-├── app/
-│   ├── api/            # API 路由
-│   │   ├── __init__.py
-│   │   └── endpoints/  # 具体 API 端点
-│   ├── core/           # 核心功能
-│   │   ├── __init__.py
-│   │   ├── config.py   # 配置管理
-│   │   ├── message.py  # 消息处理
-│   │   └── sender.py   # 发送器核心逻辑
-│   ├── models/         # 数据模型
-│   │   ├── __init__.py
-│   │   └── message.py  # 消息模型
-│   ├── services/       # 服务层
-│   │   ├── __init__.py
-│   │   └── queue.py    # 消息队列服务
-│   └── __init__.py
-├── cli/                # 命令行界面
-│   ├── __init__.py
-│   └── main.py         # CLI 入口
-├── gui/                # 可视化界面
-│   ├── __init__.py
-│   └── main.py         # GUI 入口
-├── scripts/            # 脚本文件
-│   ├── build.py        # 构建脚本
-│   └── run.py          # 运行脚本
-├── tests/              # 测试文件
-│   ├── __init__.py
-│   └── test_sender.py  # 发送器测试
-├── .gitignore          # Git 忽略文件
-├── poetry.lock         # 依赖锁定文件
-├── pyproject.toml      # 项目配置文件
-└── README.md           # 项目说明文件
+├── src/
+│   ├── api/             # API 路由
+│   │   ├── mod.rs
+│   │   └── endpoints/   # 具体 API 端点
+│   │       └── mod.rs
+│   ├── core/            # 核心功能
+│   │   ├── mod.rs
+│   │   ├── config.rs    # 配置管理
+│   │   ├── message.rs   # 消息处理
+│   │   └── sender.rs    # 发送器核心逻辑
+│   ├── models/          # 数据模型
+│   │   ├── mod.rs
+│   │   └── message.rs   # 消息模型
+│   ├── services/        # 服务层
+│   │   ├── mod.rs
+│   │   └── queue.rs     # 消息队列服务
+│   ├── web/             # Web 界面
+│   │   ├── mod.rs
+│   │   ├── templates/   # 模板文件
+│   │   └── static/      # 静态资源
+│   ├── cli/             # 命令行界面
+│   │   └── mod.rs
+│   └── main.rs          # 主入口
+├── tests/               # 测试文件
+│   └── sender.rs        # 发送器测试
+├── .gitignore           # Git 忽略文件
+├── Cargo.toml           # 项目配置文件
+├── Cargo.lock           # 依赖锁定文件
+└── README.md            # 项目说明文件
 ```
 
 ## 4. 核心功能实现
@@ -90,10 +89,11 @@ ReChat-sender/
 - 查看发送历史和状态
 - 配置管理
 
-### 4.4 可视化界面
-- 图形化消息发送界面
+### 4.4 Web 界面
+- 基于 Web 的图形化界面
 - 实时状态监控
 - 配置管理界面
+- 消息发送表单
 
 ### 4.5 配置管理
 - 支持配置文件和环境变量
@@ -103,12 +103,12 @@ ReChat-sender/
 ## 5. 部署方案
 
 ### 5.1 Windows 部署
-- 使用 PyInstaller 打包为可执行文件
+- 编译为 Windows 可执行文件
 - 提供安装脚本
 - 支持服务化运行
 
 ### 5.2 开发环境
-- Poetry 环境管理
+- Cargo 环境管理
 - 本地开发服务器
 - 调试模式
 
@@ -128,7 +128,7 @@ ReChat-sender/
 
 ### 7.1 初始化项目
 1. 创建项目目录结构
-2. 初始化 Poetry 项目
+2. 初始化 Cargo 项目
 3. 配置依赖项
 
 ### 7.2 核心功能开发
@@ -141,16 +141,21 @@ ReChat-sender/
 2. 实现 API 路由
 3. 添加数据验证
 
-### 7.4 界面开发
-1. 开发命令行界面
-2. 开发可视化界面
+### 7.4 Web 界面开发
+1. 设计 Web 界面
+2. 实现前端模板
+3. 添加静态资源
 
-### 7.5 测试和优化
+### 7.5 命令行界面开发
+1. 实现 CLI 命令
+2. 添加命令行参数解析
+
+### 7.6 测试和优化
 1. 编写单元测试
 2. 进行集成测试
 3. 性能优化
 
-### 7.6 部署准备
+### 7.7 部署准备
 1. 编写构建脚本
 2. 测试打包过程
 3. 准备部署文档
@@ -161,32 +166,36 @@ ReChat-sender/
 - Windows 环境兼容性问题
 - 消息发送可靠性
 - 性能瓶颈
+- Web 界面响应速度
 
 ### 8.2 风险缓解措施
 - 充分测试 Windows 环境
 - 实现消息队列和重试机制
 - 优化异步处理和资源管理
+- 使用前端缓存和优化技术
 
 ## 9. 依赖管理
 
 ### 9.1 核心依赖
-- fastapi==0.104.1
-- pydantic==2.5.2
-- pydantic-settings==2.1.0
-- redis==5.0.1
-- websockets==12.0
-- uvicorn==0.24.0
+- actix-web = "4.4.0"
+- tokio = { version = "1.32.0", features = ["full"] }
+- redis = "0.24.0"
+- rusqlite = "0.29.0"
+- websocket = "0.26.5"
+- tera = "1.19.0"
+- serde = { version = "1.0.188", features = ["derive"] }
+- serde_json = "1.0.107"
 
 ### 9.2 开发依赖
-- poetry==1.7.1
-- black==23.12.1
-- pytest==7.4.3
-- pyinstaller==6.0.0
+- rustfmt = "1.0.0"
+- clippy = "0.1.75"
+- cargo-tarpaulin = "0.22.0"
 
 ## 10. 预期成果
 
 - 功能完整的 ReChat-sender 服务端
-- 支持 Windows 终端和可视化界面
+- 使用 Rust 语言开发，性能优异
+- 支持 Windows 终端和基于 Web 的图形化界面
 - 可靠的消息发送机制
 - 完善的 API 接口
 - 良好的测试覆盖
@@ -199,3 +208,4 @@ ReChat-sender/
 - 实现更丰富的消息类型
 - 提供监控和告警机制
 - 支持集群部署
+- 优化 Web 界面用户体验
