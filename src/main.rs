@@ -1,5 +1,6 @@
 use actix_web::{App, HttpServer};
 use clap::{App as ClapApp, Arg};
+use std::sync::Arc;
 
 // 从lib中导入模块
 use rechat_sender::REPO;
@@ -25,6 +26,22 @@ async fn main() -> std::io::Result<()> {
     let config = core::config::Config::default();
     let db_path = config.database.path.clone();
 
+    // 初始化适配器管理器
+    let adapter_manager = Arc::new(core::adapter::AdapterManager::new());
+    
+    // 初始化插件管理器
+    let plugin_manager = Arc::new(core::plugin::PluginManager::new());
+
+    // 启动适配器
+    if let Err(e) = adapter_manager.start_all() {
+        eprintln!("Failed to start adapters: {}", e);
+    }
+
+    // 初始化插件
+    if let Err(e) = plugin_manager.initialize_all() {
+        eprintln!("Failed to initialize plugins: {}", e);
+    }
+
     // 启动HTTP服务器
     HttpServer::new(move || {
         // 为每个线程初始化MessageRepository
@@ -34,9 +51,13 @@ async fn main() -> std::io::Result<()> {
             }
         });
 
-        App::new().service(api::routes()).service(web::routes())
+        App::new()
+            .app_data(actix_web::web::Data::new(adapter_manager.clone()))
+            .app_data(actix_web::web::Data::new(plugin_manager.clone()))
+            .service(api::routes())
+            .service(web::routes())
     })
-    .workers(1) // 只使用一个工作线程，避免SQLite连接的线程安全问题
+    .workers(config.server.workers)
     .bind((config.server.host, config.server.port))?
     .run()
     .await
