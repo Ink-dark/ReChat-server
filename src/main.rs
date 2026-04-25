@@ -1,4 +1,5 @@
 use actix_web::{App, HttpServer};
+use clap::{App as ClapApp, Arg};
 
 // 从lib中导入模块
 use rechat_sender::REPO;
@@ -8,6 +9,18 @@ use rechat_sender::web;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    // 解析命令行参数
+    let _matches = ClapApp::new("rechat-sender")
+        .version("0.1.0")
+        .about("ReChat message sender server")
+        .arg(
+            Arg::with_name("server")
+                .long("server")
+                .required(true)
+                .help("Start the server")
+        )
+        .get_matches();
+
     // 加载配置
     let config = core::config::Config::default();
     let db_path = config.database.path.clone();
