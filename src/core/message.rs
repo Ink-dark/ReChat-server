@@ -25,8 +25,16 @@ impl MessageRepository {
     }
 
     pub fn save(&self, message: &Message) -> Result<()> {
-        let created_at_secs = message.created_at.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as i64;
-        let updated_at_secs = message.updated_at.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as i64;
+        let created_at_secs = message
+            .created_at
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+        let updated_at_secs = message
+            .updated_at
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
         let created_at_str = created_at_secs.to_string();
         let updated_at_str = updated_at_secs.to_string();
         let retry_count_str = message.retry_count.to_string();
@@ -34,7 +42,7 @@ impl MessageRepository {
             "INSERT OR REPLACE INTO messages 
              (id, message_type, content, recipient, status, created_at, updated_at, retry_count) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            &[
+            [
                 &message.id,
                 &format!("{:?}", message.message_type),
                 &message.content,
@@ -53,7 +61,7 @@ impl MessageRepository {
             "SELECT id, message_type, content, recipient, status, created_at, updated_at, retry_count 
              FROM messages WHERE id = ?",
         )?;
-        let mut rows = stmt.query(&[id])?;
+        let mut rows = stmt.query([id])?;
         if let Some(row) = rows.next()? {
             let id: String = row.get(0)?;
             let message_type_str: String = row.get(1)?;
@@ -68,7 +76,13 @@ impl MessageRepository {
                 "Text" => crate::models::message::MessageType::Text,
                 "Image" => crate::models::message::MessageType::Image,
                 "File" => crate::models::message::MessageType::File,
-                _ => return Err(rusqlite::Error::InvalidColumnType(1, "Text".to_string(), rusqlite::types::Type::Text)),
+                _ => {
+                    return Err(rusqlite::Error::InvalidColumnType(
+                        1,
+                        "Text".to_string(),
+                        rusqlite::types::Type::Text,
+                    ));
+                }
             };
 
             let status = match status_str.as_str() {
@@ -76,11 +90,19 @@ impl MessageRepository {
                 "Sending" => MessageStatus::Sending,
                 "Sent" => MessageStatus::Sent,
                 "Failed" => MessageStatus::Failed,
-                _ => return Err(rusqlite::Error::InvalidColumnType(4, "Text".to_string(), rusqlite::types::Type::Text)),
+                _ => {
+                    return Err(rusqlite::Error::InvalidColumnType(
+                        4,
+                        "Text".to_string(),
+                        rusqlite::types::Type::Text,
+                    ));
+                }
             };
 
-            let created_at = std::time::UNIX_EPOCH + std::time::Duration::from_secs(created_at_secs as u64);
-            let updated_at = std::time::UNIX_EPOCH + std::time::Duration::from_secs(updated_at_secs as u64);
+            let created_at =
+                std::time::UNIX_EPOCH + std::time::Duration::from_secs(created_at_secs as u64);
+            let updated_at =
+                std::time::UNIX_EPOCH + std::time::Duration::from_secs(updated_at_secs as u64);
 
             Ok(Some(Message {
                 id,
@@ -102,7 +124,7 @@ impl MessageRepository {
             "SELECT id, message_type, content, recipient, status, created_at, updated_at, retry_count 
              FROM messages WHERE status = 'Pending' OR status = 'Sending' LIMIT ?",
         )?;
-        let mut rows = stmt.query(&[&limit])?;
+        let mut rows = stmt.query([&limit])?;
         let mut messages = Vec::new();
 
         while let Some(row) = rows.next()? {
@@ -130,8 +152,10 @@ impl MessageRepository {
                 _ => continue,
             };
 
-            let created_at = std::time::UNIX_EPOCH + std::time::Duration::from_secs(created_at_secs as u64);
-            let updated_at = std::time::UNIX_EPOCH + std::time::Duration::from_secs(updated_at_secs as u64);
+            let created_at =
+                std::time::UNIX_EPOCH + std::time::Duration::from_secs(created_at_secs as u64);
+            let updated_at =
+                std::time::UNIX_EPOCH + std::time::Duration::from_secs(updated_at_secs as u64);
 
             messages.push(Message {
                 id,

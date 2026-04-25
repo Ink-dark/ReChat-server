@@ -1,4 +1,4 @@
-use actix_web::{web, Scope, HttpResponse, Responder};
+use actix_web::{HttpResponse, Responder, Scope, web};
 
 pub fn routes() -> Scope {
     web::scope("")
@@ -8,7 +8,8 @@ pub fn routes() -> Scope {
 }
 
 async fn index() -> impl Responder {
-    HttpResponse::Ok().body(r#"
+    HttpResponse::Ok().body(
+        r#"
         <!DOCTYPE html>
         <html>
         <head>
@@ -31,7 +32,8 @@ async fn index() -> impl Responder {
             <p>Welcome to ReChat Sender! This is a web interface for sending messages.</p>
         </body>
         </html>
-    "#)
+    "#,
+    )
 }
 
 async fn send_page() -> impl Responder {

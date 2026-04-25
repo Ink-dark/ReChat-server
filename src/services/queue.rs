@@ -39,4 +39,9 @@ impl MessageQueue {
         let len: usize = conn.llen(&self.queue_name)?;
         Ok(len)
     }
+
+    pub fn is_empty(&self) -> Result<bool, Box<dyn std::error::Error>> {
+        let len = self.len()?;
+        Ok(len == 0)
+    }
 }

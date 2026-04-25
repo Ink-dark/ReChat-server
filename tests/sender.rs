@@ -19,7 +19,11 @@ fn test_message_repository() {
     let repo = MessageRepository::new(db_path).unwrap();
 
     // 创建测试消息
-    let message = Message::new(MessageType::Text, "Test message".to_string(), "user1".to_string());
+    let message = Message::new(
+        MessageType::Text,
+        "Test message".to_string(),
+        "user1".to_string(),
+    );
 
     // 保存消息
     repo.save(&message).unwrap();
