@@ -17,7 +17,7 @@ async fn main() -> std::io::Result<()> {
             Arg::with_name("server")
                 .long("server")
                 .required(true)
-                .help("Start the server")
+                .help("Start the server"),
         )
         .get_matches();
 
