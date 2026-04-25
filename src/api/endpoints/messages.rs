@@ -1,4 +1,3 @@
-use crate::REPO;
 use crate::models::message::{Message, MessageType};
 use actix_web::{HttpResponse, Responder, web};
 use serde::{Deserialize, Serialize};

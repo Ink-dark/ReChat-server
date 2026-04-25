@@ -42,7 +42,7 @@ impl MessageRepository {
             "INSERT OR REPLACE INTO messages 
              (id, message_type, content, recipient, status, created_at, updated_at, retry_count) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            &[
+            [
                 &message.id,
                 &format!("{:?}", message.message_type),
                 &message.content,
@@ -61,7 +61,7 @@ impl MessageRepository {
             "SELECT id, message_type, content, recipient, status, created_at, updated_at, retry_count 
              FROM messages WHERE id = ?",
         )?;
-        let mut rows = stmt.query(&[id])?;
+        let mut rows = stmt.query([id])?;
         if let Some(row) = rows.next()? {
             let id: String = row.get(0)?;
             let message_type_str: String = row.get(1)?;
@@ -124,7 +124,7 @@ impl MessageRepository {
             "SELECT id, message_type, content, recipient, status, created_at, updated_at, retry_count 
              FROM messages WHERE status = 'Pending' OR status = 'Sending' LIMIT ?",
         )?;
-        let mut rows = stmt.query(&[&limit])?;
+        let mut rows = stmt.query([&limit])?;
         let mut messages = Vec::new();
 
         while let Some(row) = rows.next()? {
