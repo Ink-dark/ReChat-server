@@ -1,6 +1,6 @@
-use clap::{App, Arg, SubCommand};
 use crate::core::message::MessageRepository;
 use crate::models::message::{Message, MessageType};
+use clap::{App, Arg, SubCommand};
 use std::sync::{Arc, RwLock};
 
 pub fn run(repo: Arc<RwLock<MessageRepository>>) {
@@ -11,20 +11,53 @@ pub fn run(repo: Arc<RwLock<MessageRepository>>) {
         .subcommand(
             SubCommand::with_name("send")
                 .about("Send a message")
-                .arg(Arg::with_name("type").short("t").long("type").takes_value(true).required(true).help("Message type: text, image, file"))
-                .arg(Arg::with_name("recipient").short("r").long("recipient").takes_value(true).required(true).help("Recipient"))
-                .arg(Arg::with_name("content").short("c").long("content").takes_value(true).required(true).help("Message content"))
+                .arg(
+                    Arg::with_name("type")
+                        .short("t")
+                        .long("type")
+                        .takes_value(true)
+                        .required(true)
+                        .help("Message type: text, image, file"),
+                )
+                .arg(
+                    Arg::with_name("recipient")
+                        .short("r")
+                        .long("recipient")
+                        .takes_value(true)
+                        .required(true)
+                        .help("Recipient"),
+                )
+                .arg(
+                    Arg::with_name("content")
+                        .short("c")
+                        .long("content")
+                        .takes_value(true)
+                        .required(true)
+                        .help("Message content"),
+                ),
         )
         .subcommand(
             SubCommand::with_name("status")
                 .about("Check message status")
-                .arg(Arg::with_name("id").short("i").long("id").takes_value(true).required(true).help("Message ID"))
+                .arg(
+                    Arg::with_name("id")
+                        .short("i")
+                        .long("id")
+                        .takes_value(true)
+                        .required(true)
+                        .help("Message ID"),
+                ),
         )
         .get_matches();
 
     match matches.subcommand() {
         ("send", Some(send_matches)) => {
-            let message_type = match send_matches.value_of("type").unwrap().to_lowercase().as_str() {
+            let message_type = match send_matches
+                .value_of("type")
+                .unwrap()
+                .to_lowercase()
+                .as_str()
+            {
                 "text" => MessageType::Text,
                 "image" => MessageType::Image,
                 "file" => MessageType::File,

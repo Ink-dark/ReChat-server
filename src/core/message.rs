@@ -25,8 +25,16 @@ impl MessageRepository {
     }
 
     pub fn save(&self, message: &Message) -> Result<()> {
-        let created_at_secs = message.created_at.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as i64;
-        let updated_at_secs = message.updated_at.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as i64;
+        let created_at_secs = message
+            .created_at
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+        let updated_at_secs = message
+            .updated_at
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
         let created_at_str = created_at_secs.to_string();
         let updated_at_str = updated_at_secs.to_string();
         let retry_count_str = message.retry_count.to_string();
@@ -68,7 +76,13 @@ impl MessageRepository {
                 "Text" => crate::models::message::MessageType::Text,
                 "Image" => crate::models::message::MessageType::Image,
                 "File" => crate::models::message::MessageType::File,
-                _ => return Err(rusqlite::Error::InvalidColumnType(1, "Text".to_string(), rusqlite::types::Type::Text)),
+                _ => {
+                    return Err(rusqlite::Error::InvalidColumnType(
+                        1,
+                        "Text".to_string(),
+                        rusqlite::types::Type::Text,
+                    ));
+                }
             };
 
             let status = match status_str.as_str() {
@@ -76,11 +90,19 @@ impl MessageRepository {
                 "Sending" => MessageStatus::Sending,
                 "Sent" => MessageStatus::Sent,
                 "Failed" => MessageStatus::Failed,
-                _ => return Err(rusqlite::Error::InvalidColumnType(4, "Text".to_string(), rusqlite::types::Type::Text)),
+                _ => {
+                    return Err(rusqlite::Error::InvalidColumnType(
+                        4,
+                        "Text".to_string(),
+                        rusqlite::types::Type::Text,
+                    ));
+                }
             };
 
-            let created_at = std::time::UNIX_EPOCH + std::time::Duration::from_secs(created_at_secs as u64);
-            let updated_at = std::time::UNIX_EPOCH + std::time::Duration::from_secs(updated_at_secs as u64);
+            let created_at =
+                std::time::UNIX_EPOCH + std::time::Duration::from_secs(created_at_secs as u64);
+            let updated_at =
+                std::time::UNIX_EPOCH + std::time::Duration::from_secs(updated_at_secs as u64);
 
             Ok(Some(Message {
                 id,
@@ -130,8 +152,10 @@ impl MessageRepository {
                 _ => continue,
             };
 
-            let created_at = std::time::UNIX_EPOCH + std::time::Duration::from_secs(created_at_secs as u64);
-            let updated_at = std::time::UNIX_EPOCH + std::time::Duration::from_secs(updated_at_secs as u64);
+            let created_at =
+                std::time::UNIX_EPOCH + std::time::Duration::from_secs(created_at_secs as u64);
+            let updated_at =
+                std::time::UNIX_EPOCH + std::time::Duration::from_secs(updated_at_secs as u64);
 
             messages.push(Message {
                 id,
