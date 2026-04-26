@@ -12,3 +12,8 @@ pub fn routes() -> Scope {
         )
         .service(web::resource("/health").route(web::get().to(endpoints::messages::health_check)))
 }
+
+pub fn ws_routes() -> Scope {
+    web::scope("")
+        .route("/ws/client", web::get().to(endpoints::ws_client::ws_client))
+}

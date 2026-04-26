@@ -43,6 +43,7 @@ async fn main() -> std::io::Result<()> {
 
     let adapter_manager = Arc::new(core::adapter::AdapterManager::new());
     let plugin_manager = Arc::new(core::plugin::PluginManager::new());
+    let broadcaster = core::broadcaster::MessageBroadcaster::new();
 
     if let Err(e) = adapter_manager.start_all() {
         tracing::error!(error = %e, "Failed to start adapters");
@@ -73,6 +74,8 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(actix_web::web::Data::new(adapter_manager.clone()))
             .app_data(actix_web::web::Data::new(plugin_manager.clone()))
+            .app_data(actix_web::web::Data::new(broadcaster.clone()))
+            .service(api::ws_routes())
             .service(api::routes())
             .service(web::routes())
     })
