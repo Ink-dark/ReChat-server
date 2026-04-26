@@ -28,29 +28,33 @@ impl MessageRepository {
         let created_at_secs = message
             .created_at
             .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
+            .unwrap_or_default()
             .as_secs() as i64;
         let updated_at_secs = message
             .updated_at
             .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
+            .unwrap_or_default()
             .as_secs() as i64;
-        let created_at_str = created_at_secs.to_string();
-        let updated_at_str = updated_at_secs.to_string();
-        let retry_count_str = message.retry_count.to_string();
+        if created_at_secs == 0 {
+            eprintln!(
+                "Warning: message {} has zero created_at timestamp, possible system time anomaly",
+                message.id
+            );
+        }
+        let retry_count = message.retry_count;
         self.conn.execute(
             "INSERT OR REPLACE INTO messages 
              (id, message_type, content, recipient, status, created_at, updated_at, retry_count) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            [
-                &message.id,
-                &format!("{:?}", message.message_type),
-                &message.content,
-                &message.recipient,
-                &format!("{:?}", message.status),
-                &created_at_str,
-                &updated_at_str,
-                &retry_count_str,
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            rusqlite::params![
+                message.id,
+                format!("{:?}", message.message_type),
+                message.content,
+                message.recipient,
+                format!("{:?}", message.status),
+                created_at_secs,
+                updated_at_secs,
+                retry_count,
             ],
         )?;
         Ok(())
@@ -72,17 +76,18 @@ impl MessageRepository {
             let updated_at_secs: i64 = row.get(6)?;
             let retry_count: u32 = row.get(7)?;
 
+            if created_at_secs <= 0 {
+                eprintln!(
+                    "Warning: message {} has invalid created_at timestamp: {}",
+                    id, created_at_secs
+                );
+            }
+
             let message_type = match message_type_str.as_str() {
                 "Text" => crate::models::message::MessageType::Text,
                 "Image" => crate::models::message::MessageType::Image,
                 "File" => crate::models::message::MessageType::File,
-                _ => {
-                    return Err(rusqlite::Error::InvalidColumnType(
-                        1,
-                        "Text".to_string(),
-                        rusqlite::types::Type::Text,
-                    ));
-                }
+                _ => return Err(rusqlite::Error::InvalidQuery),
             };
 
             let status = match status_str.as_str() {
@@ -90,13 +95,7 @@ impl MessageRepository {
                 "Sending" => MessageStatus::Sending,
                 "Sent" => MessageStatus::Sent,
                 "Failed" => MessageStatus::Failed,
-                _ => {
-                    return Err(rusqlite::Error::InvalidColumnType(
-                        4,
-                        "Text".to_string(),
-                        rusqlite::types::Type::Text,
-                    ));
-                }
+                _ => return Err(rusqlite::Error::InvalidQuery),
             };
 
             let created_at =

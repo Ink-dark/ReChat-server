@@ -24,5 +24,4 @@ uuid = { version = "1.7.0", features = ["v4"] }
 clap = "2.33.3"
 
 [dev-dependencies]
-cargo-tarpaulin = "0.22.0"
 tempfile = "3.10.1"
