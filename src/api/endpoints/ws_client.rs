@@ -39,7 +39,13 @@ pub async fn ws_client(
     broadcaster: web::Data<MessageBroadcaster>,
     adapter_manager: web::Data<Arc<AdapterManager>>,
 ) -> Result<HttpResponse, Error> {
-    let (res, mut session, msg_stream) = actix_ws::handle(&req, stream)?;
+    let (res, mut session, msg_stream) = match actix_ws::handle(&req, stream) {
+        Ok(result) => result,
+        Err(e) => {
+            tracing::error!(error = %e, "WebSocket handshake failed");
+            return Err(actix_web::error::ErrorBadRequest(e));
+        }
+    };
 
     let session_id = Uuid::new_v4().to_string();
     let (tx, mut rx) = mpsc::unbounded_channel::<String>();
@@ -141,6 +147,16 @@ async fn handle_command(
 
             let platform = data.platform.unwrap_or_default();
             let content = data.content.unwrap_or_default();
+
+            if platform.is_empty() || content.is_empty() {
+                let err = serde_json::json!({
+                    "type": "error",
+                    "error": "Platform and content are required"
+                });
+                let _ = session.text(err.to_string()).await;
+                return;
+            }
+
             let message_type = data.message_type.unwrap_or_else(|| "Text".into());
 
             let msg_type = match message_type.as_str() {
