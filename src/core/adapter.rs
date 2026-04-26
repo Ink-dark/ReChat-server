@@ -27,7 +27,7 @@ pub enum AdapterStatus {
     Error,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct AdapterStats {
     pub total_messages_sent: u64,
     pub total_messages_received: u64,
@@ -35,19 +35,14 @@ pub struct AdapterStats {
     pub uptime_seconds: u64,
 }
 
-impl Default for AdapterStats {
-    fn default() -> Self {
-        Self {
-            total_messages_sent: 0,
-            total_messages_received: 0,
-            error_count: 0,
-            uptime_seconds: 0,
-        }
-    }
-}
-
 pub struct AdapterManager {
     adapters: Vec<Arc<dyn Adapter>>,
+}
+
+impl Default for AdapterManager {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl AdapterManager {

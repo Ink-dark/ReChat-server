@@ -34,25 +34,21 @@ pub enum PluginStatus {
     Error,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct PluginStats {
     pub total_processed: u64,
     pub error_count: u64,
     pub processing_time_ms: u64,
 }
 
-impl Default for PluginStats {
-    fn default() -> Self {
-        Self {
-            total_processed: 0,
-            error_count: 0,
-            processing_time_ms: 0,
-        }
-    }
-}
-
 pub struct PluginManager {
     plugins: Vec<Arc<dyn Plugin>>,
+}
+
+impl Default for PluginManager {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl PluginManager {
