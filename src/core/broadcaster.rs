@@ -59,18 +59,21 @@ impl MessageBroadcaster {
     pub fn register(&self, session: ClientSession) {
         self.sessions
             .lock()
-            .unwrap()
+            .expect("broadcaster sessions mutex poisoned")
             .insert(session.id.clone(), session);
     }
 
     pub fn unregister(&self, session_id: &str) {
-        self.sessions.lock().unwrap().remove(session_id);
+        self.sessions
+            .lock()
+            .expect("broadcaster sessions mutex poisoned")
+            .remove(session_id);
     }
 
     pub fn broadcast_message(&self, platform: &str, msg: &BroadcastMessage) {
         let mut stale_ids = Vec::new();
         {
-            let sessions = self.sessions.lock().unwrap();
+            let sessions = self.sessions.lock().expect("broadcaster sessions mutex poisoned");
             for session in sessions.values() {
                 if session.platforms.contains(platform)
                     && let Ok(json) = serde_json::to_string(msg)
@@ -92,7 +95,7 @@ impl MessageBroadcaster {
         platforms: Vec<String>,
         conversations: Vec<String>,
     ) {
-        let mut sessions = self.sessions.lock().unwrap();
+        let mut sessions = self.sessions.lock().expect("broadcaster sessions mutex poisoned");
         if let Some(s) = sessions.get_mut(session_id) {
             for p in platforms {
                 s.platforms.insert(p);
@@ -109,7 +112,7 @@ impl MessageBroadcaster {
         platforms: Vec<String>,
         conversations: Vec<String>,
     ) {
-        let mut sessions = self.sessions.lock().unwrap();
+        let mut sessions = self.sessions.lock().expect("broadcaster sessions mutex poisoned");
         if let Some(s) = sessions.get_mut(session_id) {
             for p in platforms {
                 s.platforms.remove(&p);
@@ -136,7 +139,7 @@ impl MessageBroadcaster {
         };
         let mut stale_ids = Vec::new();
         {
-            let sessions = self.sessions.lock().unwrap();
+            let sessions = self.sessions.lock().expect("broadcaster sessions mutex poisoned");
             for session in sessions.values() {
                 if (session.platforms.contains(platform) || session.platforms.is_empty())
                     && let Ok(json) = serde_json::to_string(&msg)
@@ -153,6 +156,6 @@ impl MessageBroadcaster {
     }
 
     pub fn client_count(&self) -> usize {
-        self.sessions.lock().unwrap().len()
+        self.sessions.lock().expect("broadcaster sessions mutex poisoned").len()
     }
 }
