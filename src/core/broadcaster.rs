@@ -71,20 +71,18 @@ impl MessageBroadcaster {
     }
 
     pub fn broadcast_message(&self, platform: &str, msg: &BroadcastMessage) {
+        let mut sessions = self.sessions.lock().expect("broadcaster sessions mutex poisoned");
         let mut stale_ids = Vec::new();
-        {
-            let sessions = self.sessions.lock().expect("broadcaster sessions mutex poisoned");
-            for session in sessions.values() {
-                if session.platforms.contains(platform)
-                    && let Ok(json) = serde_json::to_string(msg)
-                    && session.sender.send(json).is_err()
-                {
-                    stale_ids.push(session.id.clone());
-                }
+        for (id, session) in sessions.iter() {
+            if session.platforms.contains(platform)
+                && let Ok(json) = serde_json::to_string(msg)
+                && session.sender.send(json).is_err()
+            {
+                stale_ids.push(id.clone());
             }
         }
-        for id in stale_ids {
-            self.unregister(&id);
+        for id in &stale_ids {
+            sessions.remove(id);
             tracing::debug!(session_id = %id, "Removed stale client session after send failure");
         }
     }
@@ -137,20 +135,18 @@ impl MessageBroadcaster {
                 created_at: 0,
             },
         };
+        let mut sessions = self.sessions.lock().expect("broadcaster sessions mutex poisoned");
         let mut stale_ids = Vec::new();
-        {
-            let sessions = self.sessions.lock().expect("broadcaster sessions mutex poisoned");
-            for session in sessions.values() {
-                if (session.platforms.contains(platform) || session.platforms.is_empty())
-                    && let Ok(json) = serde_json::to_string(&msg)
-                    && session.sender.send(json).is_err()
-                {
-                    stale_ids.push(session.id.clone());
-                }
+        for (id, session) in sessions.iter() {
+            if (session.platforms.contains(platform) || session.platforms.is_empty())
+                && let Ok(json) = serde_json::to_string(&msg)
+                && session.sender.send(json).is_err()
+            {
+                stale_ids.push(id.clone());
             }
         }
-        for id in stale_ids {
-            self.unregister(&id);
+        for id in &stale_ids {
+            sessions.remove(id);
             tracing::debug!(session_id = %id, "Removed stale client session after status broadcast failure");
         }
     }
