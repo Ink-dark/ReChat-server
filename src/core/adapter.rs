@@ -52,9 +52,7 @@ pub struct AdapterManager {
 
 impl AdapterManager {
     pub fn new() -> Self {
-        Self {
-            adapters: vec!(),
-        }
+        Self { adapters: vec![] }
     }
 
     pub fn add_adapter(&mut self, adapter: Arc<dyn Adapter>) {
@@ -75,7 +73,11 @@ impl AdapterManager {
         Ok(())
     }
 
-    pub fn send_to_adapter(&self, adapter_name: &str, message: &Message) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn send_to_adapter(
+        &self,
+        adapter_name: &str,
+        message: &Message,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         for adapter in &self.adapters {
             if adapter.name() == adapter_name {
                 return adapter.send_message(message);
@@ -87,7 +89,10 @@ impl AdapterManager {
         )))
     }
 
-    pub fn broadcast_message(&self, message: &Message) -> Vec<Result<(), Box<dyn std::error::Error>>> {
+    pub fn broadcast_message(
+        &self,
+        message: &Message,
+    ) -> Vec<Result<(), Box<dyn std::error::Error>>> {
         self.adapters
             .iter()
             .map(|adapter| adapter.send_message(message))
