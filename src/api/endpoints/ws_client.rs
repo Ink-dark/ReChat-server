@@ -152,13 +152,22 @@ async fn handle_command(
             let recipient = data.conversation.unwrap_or_default();
             let message = Message::new(msg_type, content.clone(), recipient.clone());
 
-            crate::REPO.with(|repo| {
+            let saved = crate::REPO.with(|repo| {
                 if let Some(r) = repo.borrow().as_ref()
-                    && let Err(e) = r.save(&message)
+                    && r.save(&message).is_ok()
                 {
-                    tracing::error!(error = %e, "Failed to save message to database");
+                    true
+                } else {
+                    tracing::error!("Failed to save message to database");
+                    false
                 }
             });
+
+            if !saved {
+                let err = serde_json::json!({"type": "error", "error": "Failed to save message"});
+                let _ = session.text(err.to_string()).await;
+                return;
+            }
 
             if let Err(e) = adapter_manager.send_to_adapter(&platform, &message) {
                 tracing::warn!(platform = %platform, error = %e, "No adapter found for platform");
