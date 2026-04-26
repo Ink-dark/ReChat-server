@@ -10,7 +10,11 @@ pub trait Plugin: Send + Sync {
     fn initialize(&self) -> Result<(), Box<dyn std::error::Error>>;
     fn shutdown(&self) -> Result<(), Box<dyn std::error::Error>>;
     fn process_message(&self, message: &mut Message) -> Result<bool, Box<dyn std::error::Error>>;
-    fn process_event(&self, event_type: &str, data: serde_json::Value) -> Result<serde_json::Value, Box<dyn std::error::Error>>;
+    fn process_event(
+        &self,
+        event_type: &str,
+        data: serde_json::Value,
+    ) -> Result<serde_json::Value, Box<dyn std::error::Error>>;
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -30,32 +34,26 @@ pub enum PluginStatus {
     Error,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct PluginStats {
     pub total_processed: u64,
     pub error_count: u64,
     pub processing_time_ms: u64,
 }
 
-impl Default for PluginStats {
-    fn default() -> Self {
-        Self {
-            total_processed: 0,
-            error_count: 0,
-            processing_time_ms: 0,
-        }
-    }
-}
-
 pub struct PluginManager {
     plugins: Vec<Arc<dyn Plugin>>,
 }
 
+impl Default for PluginManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PluginManager {
     pub fn new() -> Self {
-        Self {
-            plugins: vec!(),
-        }
+        Self { plugins: vec![] }
     }
 
     pub fn add_plugin(&mut self, plugin: Arc<dyn Plugin>) {
@@ -76,7 +74,10 @@ impl PluginManager {
         Ok(())
     }
 
-    pub fn process_message(&self, message: &mut Message) -> Result<bool, Box<dyn std::error::Error>> {
+    pub fn process_message(
+        &self,
+        message: &mut Message,
+    ) -> Result<bool, Box<dyn std::error::Error>> {
         for plugin in &self.plugins {
             if plugin.process_message(message)? {
                 return Ok(true);
@@ -85,7 +86,11 @@ impl PluginManager {
         Ok(false)
     }
 
-    pub fn process_event(&self, event_type: &str, data: serde_json::Value) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
+    pub fn process_event(
+        &self,
+        event_type: &str,
+        data: serde_json::Value,
+    ) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
         let mut result = data;
         for plugin in &self.plugins {
             result = plugin.process_event(event_type, result)?;

@@ -21,6 +21,16 @@ pub struct MessageResponse {
     pub retry_count: u32,
 }
 
+fn system_time_to_secs(t: std::time::SystemTime) -> u64 {
+    match t.duration_since(std::time::UNIX_EPOCH) {
+        Ok(d) => d.as_secs(),
+        Err(e) => {
+            tracing::warn!(error = %e, "System time before UNIX epoch, returning 0");
+            0
+        }
+    }
+}
+
 impl From<Message> for MessageResponse {
     fn from(message: Message) -> Self {
         Self {
@@ -29,16 +39,8 @@ impl From<Message> for MessageResponse {
             content: message.content,
             recipient: message.recipient,
             status: format!("{:?}", message.status),
-            created_at: message
-                .created_at
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_secs(),
-            updated_at: message
-                .updated_at
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_secs(),
+            created_at: system_time_to_secs(message.created_at),
+            updated_at: system_time_to_secs(message.updated_at),
             retry_count: message.retry_count,
         }
     }
@@ -56,23 +58,29 @@ pub async fn create_message(req: web::Json<CreateMessageRequest>) -> impl Respon
     };
 
     let message = Message::new(message_type, req.content.clone(), req.recipient.clone());
-    match crate::REPO.with(|repo| repo.borrow().as_ref().unwrap().save(&message)) {
-        Ok(_) => HttpResponse::Created().json(MessageResponse::from(message)),
-        Err(e) => {
+    let result = crate::REPO.with(|repo| repo.borrow().as_ref().map(|r| r.save(&message)));
+    match result {
+        Some(Ok(_)) => HttpResponse::Created().json(MessageResponse::from(message)),
+        Some(Err(e)) => {
             HttpResponse::InternalServerError().json(serde_json::json!({"error": e.to_string()}))
         }
+        None => HttpResponse::InternalServerError()
+            .json(serde_json::json!({"error": "Repository not initialized"})),
     }
 }
 
 pub async fn get_message(id: web::Path<String>) -> impl Responder {
-    match crate::REPO.with(|repo| repo.borrow().as_ref().unwrap().get(&id)) {
-        Ok(Some(message)) => HttpResponse::Ok().json(MessageResponse::from(message)),
-        Ok(None) => {
+    let result = crate::REPO.with(|repo| repo.borrow().as_ref().map(|r| r.get(&id)));
+    match result {
+        Some(Ok(Some(message))) => HttpResponse::Ok().json(MessageResponse::from(message)),
+        Some(Ok(None)) => {
             HttpResponse::NotFound().json(serde_json::json!({"error": "Message not found"}))
         }
-        Err(e) => {
+        Some(Err(e)) => {
             HttpResponse::InternalServerError().json(serde_json::json!({"error": e.to_string()}))
         }
+        None => HttpResponse::InternalServerError()
+            .json(serde_json::json!({"error": "Repository not initialized"})),
     }
 }
 

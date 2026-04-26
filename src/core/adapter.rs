@@ -27,7 +27,7 @@ pub enum AdapterStatus {
     Error,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct AdapterStats {
     pub total_messages_sent: u64,
     pub total_messages_received: u64,
@@ -35,26 +35,19 @@ pub struct AdapterStats {
     pub uptime_seconds: u64,
 }
 
-impl Default for AdapterStats {
-    fn default() -> Self {
-        Self {
-            total_messages_sent: 0,
-            total_messages_received: 0,
-            error_count: 0,
-            uptime_seconds: 0,
-        }
-    }
-}
-
 pub struct AdapterManager {
     adapters: Vec<Arc<dyn Adapter>>,
 }
 
+impl Default for AdapterManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AdapterManager {
     pub fn new() -> Self {
-        Self {
-            adapters: vec!(),
-        }
+        Self { adapters: vec![] }
     }
 
     pub fn add_adapter(&mut self, adapter: Arc<dyn Adapter>) {
@@ -75,7 +68,11 @@ impl AdapterManager {
         Ok(())
     }
 
-    pub fn send_to_adapter(&self, adapter_name: &str, message: &Message) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn send_to_adapter(
+        &self,
+        adapter_name: &str,
+        message: &Message,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         for adapter in &self.adapters {
             if adapter.name() == adapter_name {
                 return adapter.send_message(message);
@@ -87,7 +84,10 @@ impl AdapterManager {
         )))
     }
 
-    pub fn broadcast_message(&self, message: &Message) -> Vec<Result<(), Box<dyn std::error::Error>>> {
+    pub fn broadcast_message(
+        &self,
+        message: &Message,
+    ) -> Vec<Result<(), Box<dyn std::error::Error>>> {
         self.adapters
             .iter()
             .map(|adapter| adapter.send_message(message))
