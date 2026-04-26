@@ -25,7 +25,7 @@ fn system_time_to_secs(t: std::time::SystemTime) -> u64 {
     match t.duration_since(std::time::UNIX_EPOCH) {
         Ok(d) => d.as_secs(),
         Err(e) => {
-            eprintln!("Warning: system time before UNIX epoch: {} (message id may be affected)", e);
+            tracing::warn!(error = %e, "System time before UNIX epoch, returning 0");
             0
         }
     }

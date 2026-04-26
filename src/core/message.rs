@@ -36,9 +36,9 @@ impl MessageRepository {
             .unwrap_or_default()
             .as_secs() as i64;
         if created_at_secs == 0 {
-            eprintln!(
-                "Warning: message {} has zero created_at timestamp, possible system time anomaly",
-                message.id
+            tracing::warn!(
+                message_id = %message.id,
+                "Message has zero created_at timestamp, possible system time anomaly"
             );
         }
         let retry_count = message.retry_count;
@@ -77,9 +77,10 @@ impl MessageRepository {
             let retry_count: u32 = row.get(7)?;
 
             if created_at_secs <= 0 {
-                eprintln!(
-                    "Warning: message {} has invalid created_at timestamp: {}",
-                    id, created_at_secs
+                tracing::warn!(
+                    message_id = %id,
+                    created_at = created_at_secs,
+                    "Message has invalid created_at timestamp"
                 );
             }
 

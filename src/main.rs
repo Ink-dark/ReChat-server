@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "windows-gui", windows_subsystem = "windows")]
+
 use actix_web::{App, HttpServer};
 use clap::{App as ClapApp, Arg};
 use std::path::Path;
@@ -10,6 +12,8 @@ use rechat_sender::web;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    core::logging::init();
+
     let matches = ClapApp::new("rechat-sender")
         .version("0.1.0")
         .about("ReChat message sender server")
@@ -24,9 +28,10 @@ async fn main() -> std::io::Result<()> {
 
     let config = if let Some(config_path) = matches.value_of("config") {
         core::config::Config::load(Path::new(config_path)).unwrap_or_else(|e| {
-            eprintln!(
-                "Warning: failed to load config from {}: {}. Using default config.",
-                config_path, e
+            tracing::warn!(
+                config_path = %config_path,
+                error = %e,
+                "Failed to load config, using default"
             );
             core::config::Config::default()
         })
@@ -40,18 +45,27 @@ async fn main() -> std::io::Result<()> {
     let plugin_manager = Arc::new(core::plugin::PluginManager::new());
 
     if let Err(e) = adapter_manager.start_all() {
-        eprintln!("Failed to start adapters: {}", e);
+        tracing::error!(error = %e, "Failed to start adapters");
     }
     if let Err(e) = plugin_manager.initialize_all() {
-        eprintln!("Failed to initialize plugins: {}", e);
+        tracing::error!(error = %e, "Failed to initialize plugins");
     }
+
+    tracing::info!(
+        host = %config.server.host,
+        port = config.server.port,
+        workers = config.server.workers,
+        "Starting ReChat sender server"
+    );
 
     HttpServer::new(move || {
         REPO.with(|repo| {
             if repo.borrow().is_none() {
                 match core::message::MessageRepository::new(&db_path) {
                     Ok(r) => *repo.borrow_mut() = Some(r),
-                    Err(e) => eprintln!("Failed to initialize message repository: {}", e),
+                    Err(e) => {
+                        tracing::error!(error = %e, path = %db_path, "Failed to initialize message repository");
+                    }
                 }
             }
         });
