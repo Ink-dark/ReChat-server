@@ -15,28 +15,28 @@
   <img src="https://img.shields.io/badge/OneBot_v11-12B7F5?style=flat&logo=tencentqq&logoColor=white" alt="OneBot v11" />
 </p>
 
----
+***
 
 ## ✨ 功能特性
 
 ### 核心能力
 
-| 功能 | 状态 | 说明 |
-|------|:---:|------|
-| **多平台消息接入** | ✅ | OneBot v11 (NapCat/QQ)，可扩展至微信/Telegram/Discord |
-| **实时消息推送** | ✅ | 双 WebSocket 通道：平台入站 `/onebot/v11/ws` + 客户端出站 `/ws/client` |
-| **消息广播中枢** | ✅ | `MessageBroadcaster` 按平台/会话订阅，精准推送 |
-| **消息生命周期管理** | ✅ | Pending → Sending → Sent → Failed 全状态流转 |
-| **Web 管理界面** | ✅ | Vanilla JS SPA：仪表盘 / 消息流 / 发送消息 / 平台状态 |
-| **暗色模式** | ✅ | 亮色/暗色/Auto 三模式，localStorage 持久化 |
-| **RESTful API** | ✅ | 创建/查询消息，健康检查（[完整文档](docs/api/README.md)） |
-| **CLI 工具** | ✅ | 命令行发送消息 / 查询状态 |
-| **Adapter 架构** | ✅ | 可插拔的适配器系统，方便接入新平台 |
-| **Plugin 架构** | ✅ | 消息处理插件系统（过滤/转换/加密） |
-| **SQLite 持久化** | ✅ | 消息数据本地存储，零配置 |
-| **结构化日志** | ✅ | tracing + 文件/双输出，文件创建失败自动降级 |
+| 功能              |  状态 | 说明                                                        |
+| --------------- | :-: | --------------------------------------------------------- |
+| **多平台消息接入**     |  ✅  | OneBot v11 (NapCat/QQ)，可扩展至微信/Telegram/Discord            |
+| **实时消息推送**      |  ✅  | 双 WebSocket 通道：平台入站 `/onebot/v11/ws` + 客户端出站 `/ws/client` |
+| **消息广播中枢**      |  ✅  | `MessageBroadcaster` 按平台/会话订阅，精准推送                        |
+| **消息生命周期管理**    |  ✅  | Pending → Sending → Sent → Failed 全状态流转                   |
+| **Web 管理界面**    |  ✅  | Vanilla JS SPA：仪表盘 / 消息流 / 发送消息 / 平台状态                    |
+| **暗色模式**        |  ✅  | 亮色/暗色/Auto 三模式，localStorage 持久化                           |
+| **RESTful API** |  ✅  | 创建/查询消息，健康检查（[完整文档](docs/api/README.md)）                  |
+| **CLI 工具**      |  ✅  | 命令行发送消息 / 查询状态                                            |
+| **Adapter 架构**  |  ✅  | 可插拔的适配器系统，方便接入新平台                                         |
+| **Plugin 架构**   |  ✅  | 消息处理插件系统（过滤/转换/加密）                                        |
+| **SQLite 持久化**  |  ✅  | 消息数据本地存储，零配置                                              |
+| **结构化日志**       |  ✅  | tracing + 文件/双输出，文件创建失败自动降级                               |
 
----
+***
 
 ## 🏗 架构
 
@@ -100,7 +100,7 @@ src/
 └── main.rs
 ```
 
----
+***
 
 ## 🚀 快速开始
 
@@ -128,12 +128,12 @@ cargo run --release -- --config config.json
 
 服务启动后：
 
-| 地址 | 说明 |
-|------|------|
-| `http://localhost:8080` | Web 管理界面 |
-| `http://localhost:8080/api/health` | 健康检查 |
-| `GET /ws/client` | WebSocket 客户端连接 |
-| `GET /onebot/v11/ws` | NapCat WebSocket 连接 |
+| 地址                                 | 说明                  |
+| ---------------------------------- | ------------------- |
+| `http://localhost:8080`            | Web 管理界面            |
+| `http://localhost:8080/api/health` | 健康检查                |
+| `GET /ws/client`                   | WebSocket 客户端连接     |
+| `GET /onebot/v11/ws`               | NapCat WebSocket 连接 |
 
 ### 连接 NapCat
 
@@ -146,38 +146,38 @@ WS 地址: ws://localhost:8080/onebot/v11/ws
 
 配置完成后打开 Web 界面，即可实时查看 QQ 消息。
 
----
+***
 
 ## 📡 API
 
 ### HTTP API
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| `POST` | `/api/messages` | 创建消息 |
-| `GET` | `/api/messages/{id}` | 查询消息 |
-| `GET` | `/api/health` | 健康检查 |
+| 方法     | 路径                   | 说明   |
+| ------ | -------------------- | ---- |
+| `POST` | `/api/messages`      | 创建消息 |
+| `GET`  | `/api/messages/{id}` | 查询消息 |
+| `GET`  | `/api/health`        | 健康检查 |
 
 ### WebSocket 指令
 
 **客户端 → 服务端** (`/ws/client`)：
 
-| type | 说明 |
-|------|------|
-| `subscribe` | 订阅平台/会话 |
-| `unsubscribe` | 取消订阅 |
+| type           | 说明      |
+| -------------- | ------- |
+| `subscribe`    | 订阅平台/会话 |
+| `unsubscribe`  | 取消订阅    |
 | `send_message` | 向平台发送消息 |
 
 **服务端 → 客户端**：
 
-| type | 说明 |
-|------|------|
-| `new_message` | 新消息推送 |
+| type             | 说明     |
+| ---------------- | ------ |
+| `new_message`    | 新消息推送  |
 | `adapter_status` | 平台连接状态 |
 
 详细文档 → [docs/api/README.md](docs/api/README.md)
 
----
+***
 
 ## ⌨️ 命令行工具
 
@@ -189,24 +189,25 @@ cargo run -- send -t text -r user1 -c "Hello"
 cargo run -- status -i <message-id>
 ```
 
----
+***
 
-## 🎨 Web UI
+## 🎨 Web UI（借鉴于[Tomato-Novel-Downloader](https://github.com/zhongbai2333/Tomato-Novel-Downloader)）
 
-| 页面 | Hash | 功能 |
-|------|------|------|
-| 仪表盘 | `#dashboard` | 统计卡片 + 最近消息 |
-| 消息流 | `#messages` | WebSocket 实时推送 + 筛选 |
-| 发送消息 | `#send` | 表单 → 平台发送 |
-| 平台状态 | `#platforms` | Adapter 连接状态 |
+| 页面   | Hash         | 功能                  |
+| ---- | ------------ | ------------------- |
+| 仪表盘  | `#dashboard` | 统计卡片 + 最近消息         |
+| 消息流  | `#messages`  | WebSocket 实时推送 + 筛选 |
+| 发送消息 | `#send`      | 表单 → 平台发送           |
+| 平台状态 | `#platforms` | Adapter 连接状态        |
 
 特性：
+
 - 🌙 亮色/暗色/Auto 主题切换
 - 🔴 实时消息推送 + 断线自动重连
 - 📱 768px 响应式
 - ⚡ 零前端依赖，全部内嵌 Rust 二进制
 
----
+***
 
 ## ⚙️ 配置
 
@@ -233,7 +234,7 @@ cargo run -- status -i <message-id>
 }
 ```
 
----
+***
 
 ## 🧪 开发
 
@@ -249,17 +250,17 @@ cargo fmt
 
 ### 待开发
 
-| 优先级 | 功能 |
-|:---:|------|
-| 🔴 | 消息发送调度器 (后台任务发送 + 重试) |
-| 🟡 | 消息列表分页 API |
-| 🟡 | 更多平台适配 (微信/Telegram/Discord) |
-| 🟡 | Redis 消息队列集成 |
-| 🟢 | Plugin 实现 (加密/格式化/翻译) |
-| 🟢 | 认证授权机制 |
+| 优先级 | 功能                           |
+| :-: | ---------------------------- |
+|  🔴 | 消息发送调度器 (后台任务发送 + 重试)        |
+|  🟡 | 消息列表分页 API                   |
+|  🟡 | 更多平台适配 (微信/Telegram/Discord) |
+|  🟡 | Redis 消息队列集成                 |
+|  🟢 | Plugin 实现 (加密/格式化/翻译)        |
+|  🟢 | 认证授权机制                       |
 
----
+***
 
 ## 📄 许可证
 
-MIT License — 详见 [LICENSE](LICENSE)
+Apache 2.0 License, Version 2.0 — 详见 [LICENSE](LICENSE)
