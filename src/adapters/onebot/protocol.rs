@@ -130,7 +130,11 @@ impl MessageSegment {
 
     /// 将消息段数组拼接为纯文本（用于内部 Message）
     pub fn segments_to_text(segments: &[MessageSegment]) -> String {
-        segments.iter().map(|s| s.to_plain_text()).collect::<Vec<_>>().join("")
+        segments
+            .iter()
+            .map(|s| s.to_plain_text())
+            .collect::<Vec<_>>()
+            .join("")
     }
 }
 

@@ -1,4 +1,4 @@
-use actix_web::{web, Error, HttpRequest, HttpResponse};
+use actix_web::{Error, HttpRequest, HttpResponse, web};
 use actix_ws::AggregatedMessage;
 use futures_util::StreamExt;
 use std::sync::Arc;
@@ -7,7 +7,7 @@ use tokio::sync::mpsc;
 
 use super::protocol::{ActionRequest, ActionResponse, MessageEvent, OneBotEvent};
 use crate::core::broadcaster::{BroadcastMessage, BroadcastMessageData, MessageBroadcaster};
-use crate::models::message::{Message, MessageType, MessageStatus};
+use crate::models::message::{Message, MessageStatus, MessageType};
 
 /// Sender handle for sending OneBot actions back to NapCat.
 /// The adapter.rs in Phase 3 will hold a clone of this.
@@ -88,14 +88,12 @@ pub async fn onebot_ws(
                         );
                     }
                 }
-                Err(_) => {
-                    match serde_json::from_str::<OneBotEvent>(&text) {
-                        Ok(event) => handle_onebot_event(&broadcaster_clone, event),
-                        Err(e) => {
-                            tracing::warn!(error = %e, "Failed to parse OneBot message: {}", text.chars().take(200).collect::<String>());
-                        }
+                Err(_) => match serde_json::from_str::<OneBotEvent>(&text) {
+                    Ok(event) => handle_onebot_event(&broadcaster_clone, event),
+                    Err(e) => {
+                        tracing::warn!(error = %e, "Failed to parse OneBot message: {}", text.chars().take(200).collect::<String>());
                     }
-                }
+                },
             }
         }
 
