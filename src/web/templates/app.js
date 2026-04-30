@@ -1,3 +1,9 @@
+/*
+  设计参考: Tomato-Novel-Downloader (MIT)
+  https://gitcode.com/gh_mirrors/to/Tomato-Novel-Downloader
+  借鉴: Hash 路由、localStorage 主题持久化、事件委托、innerHTML 模板渲染、WebSocket 自动重连
+*/
+
 'use strict';
 
 // ========== Theme ==========
