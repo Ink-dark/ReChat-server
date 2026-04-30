@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReChat - 消息集合平台</title>
+    <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="brand">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        <span>ReChat</span>
+    </div>
+    <nav class="nav">
+        <a href="#dashboard" class="nav-item active">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            <span>仪表盘</span>
+        </a>
+        <a href="#messages" class="nav-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            <span>消息流</span>
+        </a>
+        <a href="#send" class="nav-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            <span>发送消息</span>
+        </a>
+        <a href="#platforms" class="nav-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            <span>平台状态</span>
+        </a>
+    </nav>
+    <div class="sidebar-footer">
+        <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">
+            <svg class="sun-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            <svg class="moon-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+        <span class="ws-status" id="wsStatus" title="WebSocket 连接状态">●</span>
+    </div>
+</aside>
+
+<main class="main-content">
+
+    <section id="dashboard" class="section active">
+        <h2 class="section-title">仪表盘</h2>
+        <div class="stats-grid" id="statsGrid">
+            <div class="card stat-card">
+                <div class="stat-label">今日消息</div>
+                <div class="stat-value" id="statToday">--</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-label">活跃平台</div>
+                <div class="stat-value" id="statPlatforms">--</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-label">WS 客户端</div>
+                <div class="stat-value" id="statClients">--</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-label">待发送</div>
+                <div class="stat-value" id="statPending">--</div>
+            </div>
+        </div>
+
+        <h3 class="section-subtitle">最近消息</h3>
+        <div class="table-wrap">
+            <table class="table" id="recentMessages">
+                <thead><tr><th>平台</th><th>会话</th><th>内容</th><th>状态</th><th>时间</th></tr></thead>
+                <tbody><tr><td colspan="5" class="empty-row">加载中...</td></tr></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section id="messages" class="section">
+        <h2 class="section-title">消息流 <span class="live-dot" id="liveDot"></span></h2>
+        <div class="toolbar">
+            <input type="text" id="msgFilter" class="input" placeholder="搜索消息内容..." oninput="renderMessages()">
+            <select id="platformFilter" class="select" onchange="renderMessages()">
+                <option value="">全部平台</option>
+                <option value="qq">QQ</option>
+            </select>
+        </div>
+        <div class="table-wrap">
+            <table class="table" id="messagesTable">
+                <thead><tr><th>平台</th><th>会话</th><th>发送者</th><th>内容</th><th>类型</th><th>状态</th><th>时间</th></tr></thead>
+                <tbody id="messagesBody"><tr><td colspan="7" class="empty-row">暂无消息</td></tr></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section id="send" class="section">
+        <h2 class="section-title">发送消息</h2>
+        <div class="card" style="max-width:600px">
+            <div class="form-group">
+                <label class="label">目标平台</label>
+                <select id="sendPlatform" class="select">
+                    <option value="qq">QQ</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="label">会话 ID</label>
+                <input type="text" id="sendConversation" class="input" placeholder="group_123456 或 private_789">
+            </div>
+            <div class="form-group">
+                <label class="label">消息类型</label>
+                <select id="sendType" class="select">
+                    <option value="Text">文本</option>
+                    <option value="Image">图片</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="label">消息内容</label>
+                <textarea id="sendContent" class="input textarea" rows="4" placeholder="输入消息内容..."></textarea>
+            </div>
+            <button class="btn primary" onclick="sendMessage()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                发送
+            </button>
+            <div id="sendResult" class="mt-3"></div>
+        </div>
+    </section>
+
+    <section id="platforms" class="section">
+        <h2 class="section-title">平台状态</h2>
+        <div class="stats-grid" id="adapterGrid">
+            <div class="card stat-card muted">
+                <div class="stat-label">无已注册平台</div>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<footer class="footer">
+    <span>ReChat v0.1.0</span>
+    <span class="separator">|</span>
+    <span id="wsFooter">WS: 连接中...</span>
+</footer>
+
+<script src="/app.js"></script>
+</body>
+</html>
