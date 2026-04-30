@@ -131,7 +131,7 @@ impl MessageBroadcaster {
         }
     }
 
-    pub fn broadcast_adapter_status(&self, platform: &str, status: &str) {
+    pub fn broadcast_adapter_status(&self, platform: &str, conversation: &str, status: &str) {
         let msg = BroadcastMessage {
             msg_type: "adapter_status".into(),
             data: BroadcastMessageData {
@@ -152,6 +152,9 @@ impl MessageBroadcaster {
         let mut stale_ids = Vec::new();
         for (id, session) in sessions.iter() {
             if (session.platforms.contains(platform) || session.platforms.is_empty())
+                && (session.conversations.is_empty()
+                    || conversation.is_empty()
+                    || session.conversations.contains(conversation))
                 && let Ok(json) = serde_json::to_string(&msg)
                 && session.sender.send(json).is_err()
             {
