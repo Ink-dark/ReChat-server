@@ -71,7 +71,10 @@ impl MessageBroadcaster {
     }
 
     pub fn broadcast_message(&self, platform: &str, conversation: &str, msg: &BroadcastMessage) {
-        let mut sessions = self.sessions.lock().expect("broadcaster sessions mutex poisoned");
+        let mut sessions = self
+            .sessions
+            .lock()
+            .expect("broadcaster sessions mutex poisoned");
         let mut stale_ids = Vec::new();
         for (id, session) in sessions.iter() {
             if session.platforms.contains(platform)
@@ -89,13 +92,11 @@ impl MessageBroadcaster {
         }
     }
 
-    pub fn subscribe(
-        &self,
-        session_id: &str,
-        platforms: Vec<String>,
-        conversations: Vec<String>,
-    ) {
-        let mut sessions = self.sessions.lock().expect("broadcaster sessions mutex poisoned");
+    pub fn subscribe(&self, session_id: &str, platforms: Vec<String>, conversations: Vec<String>) {
+        let mut sessions = self
+            .sessions
+            .lock()
+            .expect("broadcaster sessions mutex poisoned");
         if let Some(s) = sessions.get_mut(session_id) {
             for p in platforms {
                 s.platforms.insert(p);
@@ -114,7 +115,10 @@ impl MessageBroadcaster {
         platforms: Vec<String>,
         conversations: Vec<String>,
     ) {
-        let mut sessions = self.sessions.lock().expect("broadcaster sessions mutex poisoned");
+        let mut sessions = self
+            .sessions
+            .lock()
+            .expect("broadcaster sessions mutex poisoned");
         if let Some(s) = sessions.get_mut(session_id) {
             for p in platforms {
                 s.platforms.remove(&p);
@@ -141,7 +145,10 @@ impl MessageBroadcaster {
                 created_at: 0,
             },
         };
-        let mut sessions = self.sessions.lock().expect("broadcaster sessions mutex poisoned");
+        let mut sessions = self
+            .sessions
+            .lock()
+            .expect("broadcaster sessions mutex poisoned");
         let mut stale_ids = Vec::new();
         for (id, session) in sessions.iter() {
             if (session.platforms.contains(platform) || session.platforms.is_empty())
@@ -158,6 +165,9 @@ impl MessageBroadcaster {
     }
 
     pub fn client_count(&self) -> usize {
-        self.sessions.lock().expect("broadcaster sessions mutex poisoned").len()
+        self.sessions
+            .lock()
+            .expect("broadcaster sessions mutex poisoned")
+            .len()
     }
 }

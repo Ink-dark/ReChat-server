@@ -219,11 +219,7 @@ async fn handle_command(
                     created_at: now,
                 },
             };
-            broadcaster.broadcast_message(
-                &platform,
-                &message.recipient,
-                &broadcast_msg,
-            );
+            broadcaster.broadcast_message(&platform, &message.recipient, &broadcast_msg);
 
             let ack = serde_json::json!({
                 "type": "ack",

@@ -1,5 +1,5 @@
-use actix_web::{Scope, web};
 use crate::adapters;
+use actix_web::{Scope, web};
 
 pub mod endpoints;
 
@@ -15,11 +15,12 @@ pub fn routes() -> Scope {
 }
 
 pub fn ws_routes() -> Scope {
-    web::scope("")
-        .route("/ws/client", web::get().to(endpoints::ws_client::ws_client))
+    web::scope("").route("/ws/client", web::get().to(endpoints::ws_client::ws_client))
 }
 
 pub fn onebot_routes() -> Scope {
-    web::scope("")
-        .route("/onebot/v11/ws", web::get().to(adapters::onebot::ws::onebot_ws))
+    web::scope("").route(
+        "/onebot/v11/ws",
+        web::get().to(adapters::onebot::ws::onebot_ws),
+    )
 }

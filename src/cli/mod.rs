@@ -81,9 +81,7 @@ pub fn run(repo: Arc<RwLock<MessageRepository>>) {
             }
         }
         ("status", Some(status_matches)) => {
-            let id = status_matches
-                .value_of("id")
-                .expect("clap required: id");
+            let id = status_matches.value_of("id").expect("clap required: id");
             match repo.read().expect("RwLock poisoned").get(id) {
                 Ok(Some(message)) => {
                     println!("Message ID: {}", message.id);
