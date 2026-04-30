@@ -1,6 +1,6 @@
 /*
   设计参考: Tomato-Novel-Downloader (MIT)
-  https://gitcode.com/gh_mirrors/to/Tomato-Novel-Downloader
+  https://github.com/zhongbai2333/Tomato-Novel-Downloader
   借鉴: Hash 路由、localStorage 主题持久化、事件委托、innerHTML 模板渲染、WebSocket 自动重连
 */
 

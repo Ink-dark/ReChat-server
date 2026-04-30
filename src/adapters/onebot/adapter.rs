@@ -29,14 +29,14 @@ impl Adapter for OneBotAdapter {
     fn start(&self) -> Result<(), Box<dyn std::error::Error>> {
         tracing::info!(adapter = %self.name, "OneBot adapter started");
         self.broadcaster
-            .broadcast_adapter_status(&self.name, "Connected");
+            .broadcast_adapter_status(&self.name, "", "Connected");
         Ok(())
     }
 
     fn stop(&self) -> Result<(), Box<dyn std::error::Error>> {
         tracing::info!(adapter = %self.name, "OneBot adapter stopped");
         self.broadcaster
-            .broadcast_adapter_status(&self.name, "Disconnected");
+            .broadcast_adapter_status(&self.name, "", "Disconnected");
         Ok(())
     }
 

@@ -1,4 +1,4 @@
-# ReChat
+# ReChat-sender
 
 > 消息集合平台 — 连接 QQ（NapCat/OneBot），实时推送，Web 管理
 
@@ -264,3 +264,7 @@ cargo fmt
 ## 📄 许可证
 
 Apache 2.0 License, Version 2.0 — 详见 [LICENSE](LICENSE)
+
+***
+
+###
