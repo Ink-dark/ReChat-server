@@ -44,12 +44,12 @@
 |:---:|:---:|------|:---:|
 | P0 | 🔴 | 消息广播中枢 + 客户端 WS — `core/broadcaster.rs` + `api/endpoints/ws_client.rs` | ✅ |
 | P1 | 🔴 | `src/adapters/onebot/protocol.rs` — OneBot 协议数据模型 | ✅ |
-| P2 | 🔴 | `src/adapters/onebot/ws.rs` — 平台 WS 端点 `/onebot/v11/ws` | ⏳ |
+| P2 | 🔴 | `src/adapters/onebot/ws.rs` — 平台 WS 端点 `/onebot/v11/ws` | ✅ |
 | P3 | 🔴 | `src/adapters/onebot/adapter.rs` — Adapter trait 实现 | ⏳ |
 | P4 | 🔴 | 集成：lib.rs / api/mod.rs / main.rs 注册路由与初始化 | ⏳ |
 | P5 | 🟡 | 测试 + 验证（cargo check / clippy / test） | ⏳ |
 
-> ✅ **Phase 1 已完成** — OneBot v11 协议层就绪：事件/动作/消息段模型、text/image/at/reply 构造器、OneBot ↔ 内部 Message 转换。
+> ✅ **Phase 2 已完成** — `/onebot/v11/ws` 端点就绪：接收事件 → 解析 → 保存 DB → 广播。Next: Phase 3 Adapter 实现。
 
 ### 其他待开发
 
