@@ -6,6 +6,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use rechat_sender::REPO;
+use rechat_sender::adapters::onebot::adapter::OneBotAdapter;
 use rechat_sender::adapters::onebot::ws::OneBotSender;
 use rechat_sender::api;
 use rechat_sender::core;
@@ -42,11 +43,19 @@ async fn main() -> std::io::Result<()> {
 
     let db_path = config.database.path.clone();
 
-    let adapter_manager = Arc::new(core::adapter::AdapterManager::new());
-    let plugin_manager = Arc::new(core::plugin::PluginManager::new());
     let broadcaster = core::broadcaster::MessageBroadcaster::new();
     let onebot_sender: OneBotSender =
         std::sync::Arc::new(std::sync::Mutex::new(None));
+
+    let mut adapter_manager = core::adapter::AdapterManager::new();
+    let onebot_adapter = OneBotAdapter::new(
+        "qq".into(),
+        onebot_sender.clone(),
+        broadcaster.clone(),
+    );
+    adapter_manager.add_adapter(std::sync::Arc::new(onebot_adapter));
+    let adapter_manager = std::sync::Arc::new(adapter_manager);
+    let plugin_manager = Arc::new(core::plugin::PluginManager::new());
 
     adapter_manager.start_all();
     plugin_manager.initialize_all();
