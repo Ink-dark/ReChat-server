@@ -80,10 +80,8 @@ async fn main() -> std::io::Result<()> {
             .app_data(actix_web::web::Data::new(plugin_manager.clone()))
             .app_data(actix_web::web::Data::new(broadcaster.clone()))
             .app_data(actix_web::web::Data::new(onebot_sender.clone()))
-            .service(api::onebot_routes())
-            .service(api::ws_routes())
-            .service(api::routes())
-            .service(web::routes())
+            .configure(api::config)
+            .configure(web::config)
     })
     .workers(config.server.workers)
     .bind((config.server.host, config.server.port))?

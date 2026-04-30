@@ -1,14 +1,13 @@
-use actix_web::{HttpResponse, Responder, Scope, web};
+use actix_web::{HttpResponse, Responder, web};
 
 const INDEX_HTML: &str = include_str!("templates/index.html");
 const APP_CSS: &str = include_str!("templates/app.css");
 const APP_JS: &str = include_str!("templates/app.js");
 
-pub fn routes() -> Scope {
-    web::scope("")
-        .route("/", web::get().to(index))
+pub fn config(cfg: &mut web::ServiceConfig) {
+    cfg.route("/", web::get().to(index))
         .route("/app.css", web::get().to(app_css))
-        .route("/app.js", web::get().to(app_js))
+        .route("/app.js", web::get().to(app_js));
 }
 
 async fn index() -> impl Responder {
