@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::sync::Arc;
+use std::sync::Mutex;
 
 use crate::models::message::Message;
 
@@ -43,6 +45,7 @@ pub struct PluginStats {
 
 pub struct PluginManager {
     plugins: Vec<Arc<dyn Plugin>>,
+    initialized: Mutex<HashSet<String>>,
 }
 
 impl Default for PluginManager {
@@ -53,25 +56,41 @@ impl Default for PluginManager {
 
 impl PluginManager {
     pub fn new() -> Self {
-        Self { plugins: vec![] }
+        Self {
+            plugins: vec![],
+            initialized: Mutex::new(HashSet::new()),
+        }
     }
 
     pub fn add_plugin(&mut self, plugin: Arc<dyn Plugin>) {
         self.plugins.push(plugin);
     }
 
-    pub fn initialize_all(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn initialize_all(&self) {
         for plugin in &self.plugins {
-            plugin.initialize()?;
+            let name = plugin.name().to_string();
+            if let Err(e) = plugin.initialize() {
+                tracing::error!(
+                    plugin = %name,
+                    error = %e,
+                    "Failed to initialize plugin"
+                );
+            } else {
+                self.initialized.lock().unwrap().insert(name);
+            }
         }
-        Ok(())
     }
 
-    pub fn shutdown_all(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn shutdown_all(&self) {
         for plugin in &self.plugins {
-            plugin.shutdown()?;
+            if let Err(e) = plugin.shutdown() {
+                tracing::error!(
+                    plugin = %plugin.name(),
+                    error = %e,
+                    "Failed to shutdown plugin"
+                );
+            }
         }
-        Ok(())
     }
 
     pub fn process_message(
@@ -99,14 +118,22 @@ impl PluginManager {
     }
 
     pub fn get_plugin_info(&self) -> Vec<PluginInfo> {
+        let initialized = self.initialized.lock().unwrap();
         self.plugins
             .iter()
-            .map(|plugin| PluginInfo {
-                name: plugin.name().to_string(),
-                version: plugin.version().to_string(),
-                description: plugin.description().to_string(),
-                status: PluginStatus::Enabled,
-                stats: PluginStats::default(),
+            .map(|plugin| {
+                let name = plugin.name().to_string();
+                PluginInfo {
+                    name: name.clone(),
+                    version: plugin.version().to_string(),
+                    description: plugin.description().to_string(),
+                    status: if initialized.contains(&name) {
+                        PluginStatus::Enabled
+                    } else {
+                        PluginStatus::Disabled
+                    },
+                    stats: PluginStats::default(),
+                }
             })
             .collect()
     }

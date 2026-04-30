@@ -70,11 +70,13 @@ impl MessageBroadcaster {
             .remove(session_id);
     }
 
-    pub fn broadcast_message(&self, platform: &str, msg: &BroadcastMessage) {
+    pub fn broadcast_message(&self, platform: &str, conversation: &str, msg: &BroadcastMessage) {
         let mut sessions = self.sessions.lock().expect("broadcaster sessions mutex poisoned");
         let mut stale_ids = Vec::new();
         for (id, session) in sessions.iter() {
             if session.platforms.contains(platform)
+                && (session.conversations.is_empty()
+                    || session.conversations.contains(conversation))
                 && let Ok(json) = serde_json::to_string(msg)
                 && session.sender.send(json).is_err()
             {
@@ -101,6 +103,8 @@ impl MessageBroadcaster {
             for c in conversations {
                 s.conversations.insert(c);
             }
+        } else {
+            tracing::warn!(session_id = %session_id, "Subscribe failed: session not found");
         }
     }
 
@@ -118,6 +122,8 @@ impl MessageBroadcaster {
             for c in conversations {
                 s.conversations.remove(&c);
             }
+        } else {
+            tracing::warn!(session_id = %session_id, "Unsubscribe failed: session not found");
         }
     }
 

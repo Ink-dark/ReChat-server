@@ -45,12 +45,8 @@ async fn main() -> std::io::Result<()> {
     let plugin_manager = Arc::new(core::plugin::PluginManager::new());
     let broadcaster = core::broadcaster::MessageBroadcaster::new();
 
-    if let Err(e) = adapter_manager.start_all() {
-        tracing::error!(error = %e, "Failed to start adapters");
-    }
-    if let Err(e) = plugin_manager.initialize_all() {
-        tracing::error!(error = %e, "Failed to initialize plugins");
-    }
+    adapter_manager.start_all();
+    plugin_manager.initialize_all();
 
     tracing::info!(
         host = %config.server.host,

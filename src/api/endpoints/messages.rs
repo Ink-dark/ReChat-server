@@ -1,3 +1,4 @@
+use crate::core::broadcaster::MessageBroadcaster;
 use crate::models::message::{Message, MessageType};
 use actix_web::{HttpResponse, Responder, web};
 use serde::{Deserialize, Serialize};
@@ -46,7 +47,10 @@ impl From<Message> for MessageResponse {
     }
 }
 
-pub async fn create_message(req: web::Json<CreateMessageRequest>) -> impl Responder {
+pub async fn create_message(
+    req: web::Json<CreateMessageRequest>,
+    broadcaster: web::Data<MessageBroadcaster>,
+) -> impl Responder {
     let message_type = match req.message_type.as_str() {
         "Text" => MessageType::Text,
         "Image" => MessageType::Image,
@@ -60,12 +64,37 @@ pub async fn create_message(req: web::Json<CreateMessageRequest>) -> impl Respon
     let message = Message::new(message_type, req.content.clone(), req.recipient.clone());
     let result = crate::REPO.with(|repo| repo.borrow().as_ref().map(|r| r.save(&message)));
     match result {
-        Some(Ok(_)) => HttpResponse::Created().json(MessageResponse::from(message)),
+        Some(Ok(_)) => {
+            let now = message
+                .created_at
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs();
+            let broadcast_msg = crate::core::broadcaster::BroadcastMessage {
+                msg_type: "new_message".into(),
+                data: crate::core::broadcaster::BroadcastMessageData {
+                    id: message.id.clone(),
+                    platform: message.recipient.clone(),
+                    conversation: message.recipient.clone(),
+                    conversation_name: None,
+                    content: message.content.clone(),
+                    message_type: format!("{:?}", message.message_type),
+                    sender: None,
+                    created_at: now,
+                },
+            };
+            broadcaster.broadcast_message(&message.recipient, &message.recipient, &broadcast_msg);
+            HttpResponse::Created().json(MessageResponse::from(message))
+        }
         Some(Err(e)) => {
+            tracing::error!(error = %e, "Failed to save message via HTTP API");
             HttpResponse::InternalServerError().json(serde_json::json!({"error": e.to_string()}))
         }
-        None => HttpResponse::InternalServerError()
-            .json(serde_json::json!({"error": "Repository not initialized"})),
+        None => {
+            tracing::error!("Repository not initialized during HTTP API call");
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": "Repository not initialized"}))
+        }
     }
 }
 
@@ -77,10 +106,14 @@ pub async fn get_message(id: web::Path<String>) -> impl Responder {
             HttpResponse::NotFound().json(serde_json::json!({"error": "Message not found"}))
         }
         Some(Err(e)) => {
+            tracing::error!(error = %e, message_id = %id.into_inner(), "Failed to get message");
             HttpResponse::InternalServerError().json(serde_json::json!({"error": e.to_string()}))
         }
-        None => HttpResponse::InternalServerError()
-            .json(serde_json::json!({"error": "Repository not initialized"})),
+        None => {
+            tracing::error!("Repository not initialized during HTTP API get call");
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": "Repository not initialized"}))
+        }
     }
 }
 

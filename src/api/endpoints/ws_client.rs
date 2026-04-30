@@ -66,7 +66,6 @@ pub async fn ws_client(
                 break;
             }
         }
-        broadcaster_for_sender.unregister(&sid_for_sender);
     });
 
     let init_session = ClientSession {
@@ -89,15 +88,24 @@ pub async fn ws_client(
         while let Some(msg) = stream.next().await {
             match msg {
                 Ok(AggregatedMessage::Text(text)) => {
-                    if let Ok(cmd) = serde_json::from_str::<ClientCommand>(&text) {
-                        handle_command(
-                            &broadcaster_clone,
-                            &adapter_clone,
-                            &sid,
-                            cmd,
-                            &mut session,
-                        )
-                        .await;
+                    match serde_json::from_str::<ClientCommand>(&text) {
+                        Ok(cmd) => {
+                            handle_command(
+                                &broadcaster_clone,
+                                &adapter_clone,
+                                &sid,
+                                cmd,
+                                &mut session,
+                            )
+                            .await;
+                        }
+                        Err(e) => {
+                            let err = serde_json::json!({
+                                "type": "error",
+                                "error": format!("Invalid JSON: {}", e)
+                            });
+                            let _ = session.text(err.to_string()).await;
+                        }
                     }
                 }
                 Ok(AggregatedMessage::Ping(bytes)) => {
@@ -129,11 +137,15 @@ async fn handle_command(
             let platforms = cmd.platforms.unwrap_or_default();
             let conversations = cmd.conversations.unwrap_or_default();
             broadcaster.subscribe(session_id, platforms, conversations);
+            let ack = serde_json::json!({"type": "ack", "status": "subscribed"});
+            let _ = session.text(ack.to_string()).await;
         }
         "unsubscribe" => {
             let platforms = cmd.platforms.unwrap_or_default();
             let conversations = cmd.conversations.unwrap_or_default();
             broadcaster.unsubscribe(session_id, platforms, conversations);
+            let ack = serde_json::json!({"type": "ack", "status": "unsubscribed"});
+            let _ = session.text(ack.to_string()).await;
         }
         "send_message" => {
             let data = match cmd.data {
@@ -147,11 +159,12 @@ async fn handle_command(
 
             let platform = data.platform.unwrap_or_default();
             let content = data.content.unwrap_or_default();
+            let recipient = data.conversation.unwrap_or_default();
 
-            if platform.is_empty() || content.is_empty() {
+            if platform.is_empty() || content.is_empty() || recipient.is_empty() {
                 let err = serde_json::json!({
                     "type": "error",
-                    "error": "Platform and content are required"
+                    "error": "Platform, content, and conversation are required"
                 });
                 let _ = session.text(err.to_string()).await;
                 return;
@@ -165,7 +178,6 @@ async fn handle_command(
                 _ => MessageType::Text,
             };
 
-            let recipient = data.conversation.unwrap_or_default();
             let message = Message::new(msg_type, content.clone(), recipient.clone());
 
             let saved = crate::REPO.with(|repo| {
@@ -207,7 +219,11 @@ async fn handle_command(
                     created_at: now,
                 },
             };
-            broadcaster.broadcast_message(&platform, &broadcast_msg);
+            broadcaster.broadcast_message(
+                &platform,
+                &message.recipient,
+                &broadcast_msg,
+            );
 
             let ack = serde_json::json!({
                 "type": "ack",
