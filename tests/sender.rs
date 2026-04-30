@@ -7,30 +7,74 @@ fn test_message_creation() {
     assert_eq!(message.content, "Hello");
     assert_eq!(message.recipient, "user1");
     assert_eq!(message.retry_count, 0);
+    assert!(!message.id.is_empty());
 }
 
 #[test]
 fn test_message_repository() {
-    // 创建临时数据库文件
     let temp_db = tempfile::NamedTempFile::new().unwrap();
     let db_path = temp_db.path().to_str().unwrap();
 
-    // 初始化消息仓库
     let repo = MessageRepository::new(db_path).unwrap();
 
-    // 创建测试消息
     let message = Message::new(
         MessageType::Text,
         "Test message".to_string(),
         "user1".to_string(),
     );
 
-    // 保存消息
     repo.save(&message).unwrap();
 
-    // 获取消息
-    let retrieved_message = repo.get(&message.id).unwrap().unwrap();
-    assert_eq!(retrieved_message.id, message.id);
-    assert_eq!(retrieved_message.content, "Test message");
-    assert_eq!(retrieved_message.recipient, "user1");
+    let retrieved = repo.get(&message.id).unwrap().unwrap();
+    assert_eq!(retrieved.id, message.id);
+    assert_eq!(retrieved.content, "Test message");
+    assert_eq!(retrieved.recipient, "user1");
+}
+
+#[test]
+fn test_get_nonexistent_message() {
+    let temp_db = tempfile::NamedTempFile::new().unwrap();
+    let db_path = temp_db.path().to_str().unwrap();
+
+    let repo = MessageRepository::new(db_path).unwrap();
+
+    let result = repo.get("nonexistent-id").unwrap();
+    assert!(result.is_none());
+}
+
+#[test]
+fn test_insert_or_replace() {
+    let temp_db = tempfile::NamedTempFile::new().unwrap();
+    let db_path = temp_db.path().to_str().unwrap();
+
+    let repo = MessageRepository::new(db_path).unwrap();
+
+    let mut message = Message::new(
+        MessageType::Text,
+        "Original".to_string(),
+        "user1".to_string(),
+    );
+    repo.save(&message).unwrap();
+
+    message.content = "Updated".to_string();
+    repo.save(&message).unwrap();
+
+    let retrieved = repo.get(&message.id).unwrap().unwrap();
+    assert_eq!(retrieved.content, "Updated");
+}
+
+#[test]
+fn test_get_pending_messages() {
+    let temp_db = tempfile::NamedTempFile::new().unwrap();
+    let db_path = temp_db.path().to_str().unwrap();
+
+    let repo = MessageRepository::new(db_path).unwrap();
+
+    let msg1 = Message::new(MessageType::Text, "Msg1".to_string(), "user1".to_string());
+    let msg2 = Message::new(MessageType::Image, "Msg2".to_string(), "user2".to_string());
+    repo.save(&msg1).unwrap();
+    repo.save(&msg2).unwrap();
+
+    let pending = repo.get_pending_messages(10).unwrap();
+    assert_eq!(pending.len(), 2);
 }

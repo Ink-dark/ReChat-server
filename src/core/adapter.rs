@@ -54,18 +54,28 @@ impl AdapterManager {
         self.adapters.push(adapter);
     }
 
-    pub fn start_all(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn start_all(&self) {
         for adapter in &self.adapters {
-            adapter.start()?;
+            if let Err(e) = adapter.start() {
+                tracing::error!(
+                    adapter = %adapter.name(),
+                    error = %e,
+                    "Failed to start adapter"
+                );
+            }
         }
-        Ok(())
     }
 
-    pub fn stop_all(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn stop_all(&self) {
         for adapter in &self.adapters {
-            adapter.stop()?;
+            if let Err(e) = adapter.stop() {
+                tracing::error!(
+                    adapter = %adapter.name(),
+                    error = %e,
+                    "Failed to stop adapter"
+                );
+            }
         }
-        Ok(())
     }
 
     pub fn send_to_adapter(

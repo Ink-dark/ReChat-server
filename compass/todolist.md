@@ -42,14 +42,14 @@
 
 | Phase | 优先级 | 任务 | 状态 |
 |:---:|:---:|------|:---:|
-| **P0** | 🔴 | **消息广播中枢 + 客户端 WS** — `core/broadcaster.rs` + `api/endpoints/ws_client.rs` | ⏳ |
-| P1 | 🔴 | `src/adapters/onebot/protocol.rs` — OneBot 协议数据模型 | ⏳ |
-| P2 | 🔴 | `src/adapters/onebot/ws.rs` — 平台 WS 端点 `/onebot/v11/ws` | ⏳ |
-| P3 | 🔴 | `src/adapters/onebot/adapter.rs` — Adapter trait 实现 | ⏳ |
-| P4 | 🔴 | 集成：lib.rs / api/mod.rs / main.rs 注册路由与初始化 | ⏳ |
+| P0 | 🔴 | 消息广播中枢 + 客户端 WS — `core/broadcaster.rs` + `api/endpoints/ws_client.rs` | ✅ |
+| P1 | 🔴 | `src/adapters/onebot/protocol.rs` — OneBot 协议数据模型 | ✅ |
+| P2 | 🔴 | `src/adapters/onebot/ws.rs` — 平台 WS 端点 `/onebot/v11/ws` | ✅ |
+| P3 | 🔴 | `src/adapters/onebot/adapter.rs` — Adapter trait 实现 | ✅ |
+| P4 | 🔴 | 集成：lib.rs / api/mod.rs / main.rs 注册路由与初始化 | ✅ |
 | P5 | 🟡 | 测试 + 验证（cargo check / clippy / test） | ⏳ |
 
-> ⚠️ **Phase 0 是关键基石**：配置两条 WS 通道 — `/onebot/v11/ws`（NapCat 入站）+ `/ws/client`（客户端出站），由 `MessageBroadcaster` 连接两者实现消息实时推送。
+> ✅ **Phase 3-4 已完成** — OneBotAdapter 实现 Adapter trait (send_message / name / start / stop)，main.rs 注册适配器到 AdapterManager。剩余 P5 测试验证。
 
 ### 其他待开发
 

@@ -6,6 +6,8 @@ use std::path::Path;
 use std::sync::Arc;
 
 use rechat_sender::REPO;
+use rechat_sender::adapters::onebot::adapter::OneBotAdapter;
+use rechat_sender::adapters::onebot::ws::OneBotSender;
 use rechat_sender::api;
 use rechat_sender::core;
 use rechat_sender::web;
@@ -41,15 +43,18 @@ async fn main() -> std::io::Result<()> {
 
     let db_path = config.database.path.clone();
 
-    let adapter_manager = Arc::new(core::adapter::AdapterManager::new());
+    let broadcaster = core::broadcaster::MessageBroadcaster::new();
+    let onebot_sender: OneBotSender = std::sync::Arc::new(std::sync::Mutex::new(None));
+
+    let mut adapter_manager = core::adapter::AdapterManager::new();
+    let onebot_adapter =
+        OneBotAdapter::new("qq".into(), onebot_sender.clone(), broadcaster.clone());
+    adapter_manager.add_adapter(std::sync::Arc::new(onebot_adapter));
+    let adapter_manager = std::sync::Arc::new(adapter_manager);
     let plugin_manager = Arc::new(core::plugin::PluginManager::new());
 
-    if let Err(e) = adapter_manager.start_all() {
-        tracing::error!(error = %e, "Failed to start adapters");
-    }
-    if let Err(e) = plugin_manager.initialize_all() {
-        tracing::error!(error = %e, "Failed to initialize plugins");
-    }
+    adapter_manager.start_all();
+    plugin_manager.initialize_all();
 
     tracing::info!(
         host = %config.server.host,
@@ -73,6 +78,10 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(actix_web::web::Data::new(adapter_manager.clone()))
             .app_data(actix_web::web::Data::new(plugin_manager.clone()))
+            .app_data(actix_web::web::Data::new(broadcaster.clone()))
+            .app_data(actix_web::web::Data::new(onebot_sender.clone()))
+            .service(api::onebot_routes())
+            .service(api::ws_routes())
             .service(api::routes())
             .service(web::routes())
     })

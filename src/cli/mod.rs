@@ -54,7 +54,7 @@ pub fn run(repo: Arc<RwLock<MessageRepository>>) {
         ("send", Some(send_matches)) => {
             let message_type = match send_matches
                 .value_of("type")
-                .unwrap()
+                .expect("clap required: type")
                 .to_lowercase()
                 .as_str()
             {
@@ -67,18 +67,22 @@ pub fn run(repo: Arc<RwLock<MessageRepository>>) {
                 }
             };
 
-            let recipient = send_matches.value_of("recipient").unwrap();
-            let content = send_matches.value_of("content").unwrap();
+            let recipient = send_matches
+                .value_of("recipient")
+                .expect("clap required: recipient");
+            let content = send_matches
+                .value_of("content")
+                .expect("clap required: content");
 
             let message = Message::new(message_type, content.to_string(), recipient.to_string());
-            match repo.write().unwrap().save(&message) {
+            match repo.write().expect("RwLock poisoned").save(&message) {
                 Ok(_) => println!("Message sent successfully. ID: {}", message.id),
                 Err(e) => println!("Error sending message: {:?}", e),
             }
         }
         ("status", Some(status_matches)) => {
-            let id = status_matches.value_of("id").unwrap();
-            match repo.read().unwrap().get(id) {
+            let id = status_matches.value_of("id").expect("clap required: id");
+            match repo.read().expect("RwLock poisoned").get(id) {
                 Ok(Some(message)) => {
                     println!("Message ID: {}", message.id);
                     println!("Type: {:?}", message.message_type);
