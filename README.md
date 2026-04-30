@@ -1,4 +1,4 @@
-# ReChat-sender
+# ReChat-provider
 
 > 消息集合平台 — 连接 QQ（NapCat/OneBot），实时推送，Web 管理
 
