@@ -267,4 +267,8 @@ Apache 2.0 License, Version 2.0 — 详见 [LICENSE](LICENSE)
 
 ***
 
-###
+## 特别鸣谢
+- [Tomato-Novel-Downloader](https://github.com/zhongbai2333/Tomato-Novel-Downloader) --- UI 设计与实现参考
+- [Ink-dark](https://github.com/Ink-dark) --- 项目维护与贡献
+- 某人的大脑和眼睛 --- 提供了构想与建议
+- 比特火炬 --- 提供了项目短链接跳转服务和部分人力支持
