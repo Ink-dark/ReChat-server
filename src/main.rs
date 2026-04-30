@@ -6,6 +6,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use rechat_sender::REPO;
+use rechat_sender::adapters::onebot::ws::OneBotSender;
 use rechat_sender::api;
 use rechat_sender::core;
 use rechat_sender::web;
@@ -44,6 +45,8 @@ async fn main() -> std::io::Result<()> {
     let adapter_manager = Arc::new(core::adapter::AdapterManager::new());
     let plugin_manager = Arc::new(core::plugin::PluginManager::new());
     let broadcaster = core::broadcaster::MessageBroadcaster::new();
+    let onebot_sender: OneBotSender =
+        std::sync::Arc::new(std::sync::Mutex::new(None));
 
     adapter_manager.start_all();
     plugin_manager.initialize_all();
@@ -71,6 +74,8 @@ async fn main() -> std::io::Result<()> {
             .app_data(actix_web::web::Data::new(adapter_manager.clone()))
             .app_data(actix_web::web::Data::new(plugin_manager.clone()))
             .app_data(actix_web::web::Data::new(broadcaster.clone()))
+            .app_data(actix_web::web::Data::new(onebot_sender.clone()))
+            .service(api::onebot_routes())
             .service(api::ws_routes())
             .service(api::routes())
             .service(web::routes())
