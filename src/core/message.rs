@@ -8,7 +8,8 @@ pub struct MessageRepository {
 fn read_message_row(
     row: (String, String, String, String, String, i64, i64, u32),
 ) -> Option<Message> {
-    let (id, mt, content, recipient, status_str, created_at_secs, updated_at_secs, retry_count) = row;
+    let (id, mt, content, recipient, status_str, created_at_secs, updated_at_secs, retry_count) =
+        row;
     let message_type = match mt.as_str() {
         "Text" => MessageType::Text,
         "Image" => MessageType::Image,
@@ -22,10 +23,8 @@ fn read_message_row(
         "Failed" => MessageStatus::Failed,
         _ => return None,
     };
-    let created_at =
-        std::time::UNIX_EPOCH + std::time::Duration::from_secs(created_at_secs as u64);
-    let updated_at =
-        std::time::UNIX_EPOCH + std::time::Duration::from_secs(updated_at_secs as u64);
+    let created_at = std::time::UNIX_EPOCH + std::time::Duration::from_secs(created_at_secs as u64);
+    let updated_at = std::time::UNIX_EPOCH + std::time::Duration::from_secs(updated_at_secs as u64);
     Some(Message {
         id,
         message_type,
@@ -229,12 +228,7 @@ impl MessageRepository {
         Ok(())
     }
 
-    pub fn list(
-        &self,
-        status: Option<&str>,
-        offset: usize,
-        limit: usize,
-    ) -> Result<Vec<Message>> {
+    pub fn list(&self, status: Option<&str>, offset: usize, limit: usize) -> Result<Vec<Message>> {
         let mut messages = Vec::new();
         if let Some(s) = status {
             let mut stmt = self.conn.prepare(
@@ -292,7 +286,9 @@ impl MessageRepository {
     }
 
     pub fn delete(&self, id: &str) -> Result<bool> {
-        let affected = self.conn.execute("DELETE FROM messages WHERE id = ?1", rusqlite::params![id])?;
+        let affected = self
+            .conn
+            .execute("DELETE FROM messages WHERE id = ?1", rusqlite::params![id])?;
         Ok(affected > 0)
     }
 }

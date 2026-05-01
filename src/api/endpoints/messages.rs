@@ -173,8 +173,9 @@ pub async fn update_message(
         "Canceled" | "Failed" => crate::models::message::MessageStatus::Failed,
         "Pending" => crate::models::message::MessageStatus::Pending,
         _ => {
-            return HttpResponse::BadRequest()
-                .json(serde_json::json!({"error": "Invalid status. Use Pending, Failed, or Canceled"}));
+            return HttpResponse::BadRequest().json(
+                serde_json::json!({"error": "Invalid status. Use Pending, Failed, or Canceled"}),
+            );
         }
     };
 
@@ -185,9 +186,7 @@ pub async fn update_message(
     });
     match result {
         Some(Ok(())) => {
-            let msg_result = crate::REPO.with(|repo| {
-                repo.borrow().as_ref().map(|r| r.get(&id))
-            });
+            let msg_result = crate::REPO.with(|repo| repo.borrow().as_ref().map(|r| r.get(&id)));
             match msg_result {
                 Some(Ok(Some(msg))) => HttpResponse::Ok().json(MessageResponse::from(msg)),
                 _ => HttpResponse::Ok().json(serde_json::json!({"status": "updated"})),
@@ -206,9 +205,7 @@ pub async fn update_message(
 }
 
 pub async fn delete_message(id: web::Path<String>) -> impl Responder {
-    let result = crate::REPO.with(|repo| {
-        repo.borrow().as_ref().map(|r| r.delete(&id))
-    });
+    let result = crate::REPO.with(|repo| repo.borrow().as_ref().map(|r| r.delete(&id)));
     match result {
         Some(Ok(true)) => HttpResponse::Ok().json(serde_json::json!({"deleted": true})),
         Some(Ok(false)) => {
@@ -237,15 +234,13 @@ pub async fn get_stats() -> impl Responder {
         Some((pending, sending, sent, failed))
     });
     match result {
-        Some((pending, sending, sent, failed)) => {
-            HttpResponse::Ok().json(serde_json::json!({
-                "pending": pending,
-                "sending": sending,
-                "sent": sent,
-                "failed": failed,
-                "total": pending + sending + sent + failed,
-            }))
-        }
+        Some((pending, sending, sent, failed)) => HttpResponse::Ok().json(serde_json::json!({
+            "pending": pending,
+            "sending": sending,
+            "sent": sent,
+            "failed": failed,
+            "total": pending + sending + sent + failed,
+        })),
         None => {
             tracing::error!("Repository not initialized during stats call");
             HttpResponse::InternalServerError()
