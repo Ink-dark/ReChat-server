@@ -50,6 +50,14 @@ impl MessageDispatcher {
         let shutdown = self.shutdown;
 
         tokio::spawn(async move {
+            let poll_repo = match MessageRepository::new(&db_path) {
+                Ok(r) => r,
+                Err(e) => {
+                    tracing::error!(error = %e, db_path = %db_path, "Dispatcher failed to open database");
+                    return;
+                }
+            };
+
             let sem = Arc::new(tokio::sync::Semaphore::new(concurrency));
 
             loop {
@@ -59,15 +67,9 @@ impl MessageDispatcher {
                     break;
                 }
 
-                let pending = match MessageRepository::new(&db_path) {
-                    Ok(repo) => repo.get_pending_messages(batch_size).unwrap_or_default(),
-                    Err(e) => {
-                        tracing::error!(error = %e, "Dispatcher failed to read pending messages");
-                        tokio::time::sleep(tokio::time::Duration::from_secs(retry_interval_secs))
-                            .await;
-                        continue;
-                    }
-                };
+                let pending = poll_repo
+                    .get_pending_messages(batch_size)
+                    .unwrap_or_default();
 
                 if pending.is_empty() {
                     tokio::time::sleep(tokio::time::Duration::from_secs(retry_interval_secs)).await;
