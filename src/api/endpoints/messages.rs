@@ -233,16 +233,20 @@ pub async fn get_stats() -> impl Responder {
         let sending = repo_ref.count_by_status("Sending").unwrap_or(0);
         let sent = repo_ref.count_by_status("Sent").unwrap_or(0);
         let failed = repo_ref.count_by_status("Failed").unwrap_or(0);
-        Some((pending, sending, sent, failed))
+        let canceled = repo_ref.count_by_status("Canceled").unwrap_or(0);
+        Some((pending, sending, sent, failed, canceled))
     });
     match result {
-        Some((pending, sending, sent, failed)) => HttpResponse::Ok().json(serde_json::json!({
-            "pending": pending,
-            "sending": sending,
-            "sent": sent,
-            "failed": failed,
-            "total": pending + sending + sent + failed,
-        })),
+        Some((pending, sending, sent, failed, canceled)) => {
+            HttpResponse::Ok().json(serde_json::json!({
+                "pending": pending,
+                "sending": sending,
+                "sent": sent,
+                "failed": failed,
+                "canceled": canceled,
+                "total": pending + sending + sent + failed + canceled,
+            }))
+        }
         None => {
             tracing::error!("Repository not initialized during stats call");
             HttpResponse::InternalServerError()
