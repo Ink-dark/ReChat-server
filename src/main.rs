@@ -43,6 +43,17 @@ async fn main() -> std::io::Result<()> {
 
     let db_path = config.database.path.clone();
 
+    let access_token = uuid::Uuid::new_v4().to_string();
+    tracing::info!(
+        token = %access_token,
+        "===== ACCESS TOKEN ====="
+    );
+    println!("==============================================");
+    println!("  Access Token: {}", access_token);
+    println!("  Web URL: http://{}:{}/?token={}", config.server.host, config.server.port, access_token);
+    println!("==============================================");
+    let access_token = actix_web::web::Data::new(access_token);
+
     let broadcaster = core::broadcaster::MessageBroadcaster::new();
     let onebot_sender: OneBotSender = std::sync::Arc::new(std::sync::Mutex::new(None));
 
@@ -80,6 +91,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(actix_web::web::Data::new(plugin_manager.clone()))
             .app_data(actix_web::web::Data::new(broadcaster.clone()))
             .app_data(actix_web::web::Data::new(onebot_sender.clone()))
+            .app_data(access_token.clone())
             .configure(api::config)
             .configure(web::config)
     })

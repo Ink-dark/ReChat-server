@@ -1,6 +1,6 @@
 <!--
   UI 设计参考: Tomato-Novel-Downloader (MIT)
-  https://github.com/zhongbai2333/Tomato-Novel-Downloader
+  https://gitcode.com/gh_mirrors/to/Tomato-Novel-Downloader
   借鉴模式: 侧边栏+主内容布局, CSS Variables 主题化, Hash 路由 SPA, include_str! 嵌入式部署
 -->
 <!DOCTYPE html>
@@ -12,6 +12,22 @@
     <link rel="stylesheet" href="/app.css">
 </head>
 <body>
+
+<div id="loginOverlay" class="login-overlay">
+    <div class="login-card">
+        <div class="login-brand">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <h2>ReChat 登录</h2>
+        </div>
+        <p class="login-desc">请输入服务端启动时生成的 Access Token</p>
+        <input type="password" id="tokenInput" class="input" placeholder="粘贴 Token..." autocomplete="off">
+        <div id="loginError" class="login-error"></div>
+        <button class="btn primary login-btn" onclick="doLogin()">验证并进入</button>
+        <p class="login-hint">Token 在服务端启动时打印在控制台</p>
+    </div>
+</div>
 
 <aside class="sidebar">
     <div class="brand">
@@ -145,6 +161,7 @@
     <span id="wsFooter">WS: 连接中...</span>
 </footer>
 
+<script>window.APP_TOKEN = "{{TOKEN}}";</script>
 <script src="/app.js"></script>
 </body>
 </html>
