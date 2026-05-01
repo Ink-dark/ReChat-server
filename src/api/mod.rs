@@ -24,7 +24,10 @@ pub fn config(cfg: &mut web::ServiceConfig) {
     );
 }
 
-async fn auth_verify(body: web::Json<serde_json::Value>, token: web::Data<String>) -> impl actix_web::Responder {
+async fn auth_verify(
+    body: web::Json<serde_json::Value>,
+    token: web::Data<String>,
+) -> impl actix_web::Responder {
     let provided = body
         .get("token")
         .and_then(|v| v.as_str())

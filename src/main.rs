@@ -1,9 +1,10 @@
 #![cfg_attr(feature = "windows-gui", windows_subsystem = "windows")]
 
-use actix_web::{App, HttpServer};
-use clap::{App as ClapApp, Arg};
 use std::path::Path;
 use std::sync::Arc;
+
+use actix_web::{App, HttpServer};
+use clap::{App as ClapApp, Arg};
 
 use rechat_sender::REPO;
 use rechat_sender::adapters::onebot::adapter::OneBotAdapter;
@@ -50,7 +51,10 @@ async fn main() -> std::io::Result<()> {
     );
     println!("==============================================");
     println!("  Access Token: {}", access_token);
-    println!("  Web URL: http://{}:{}/?token={}", config.server.host, config.server.port, access_token);
+    println!(
+        "  Web URL: http://{}:{}/?token={}",
+        config.server.host, config.server.port, access_token
+    );
     println!("==============================================");
     let access_token = actix_web::web::Data::new(access_token);
 
