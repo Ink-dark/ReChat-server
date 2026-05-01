@@ -1,8 +1,8 @@
-# ReChat-sender API 文档
+# ReChat-provider API 文档
 
 > 版本: 0.2.0 | 更新: 2026-05-01
 
----
+***
 
 ## 目录
 
@@ -17,37 +17,37 @@
   - [3.3 服务端 → 客户端](#33-服务端--客户端)
 - [4. Web 页面](#4-web-页面)
 
----
+***
 
 ## 1. 概述
 
 ### 端点总览
 
-| 端点 | 方法 | 类型 | 说明 |
-|------|:---:|:---:|------|
-| `/api/messages` | POST | HTTP | 创建消息 |
-| `/api/messages` | GET | HTTP | 消息列表（支持筛选和分页） |
-| `/api/messages/{id}` | GET | HTTP | 查询单条消息 |
-| `/api/messages/{id}` | PATCH | HTTP | 更新消息状态 |
-| `/api/messages/{id}` | DELETE | HTTP | 删除消息 |
-| `/api/stats` | GET | HTTP | 统计概览（各状态计数） |
-| `/api/health` | GET | HTTP | 健康检查 |
-| `/ws/client` | GET | WebSocket | 客户端实时通道 |
+| 端点                   |   方法   |     类型    | 说明            |
+| -------------------- | :----: | :-------: | ------------- |
+| `/api/messages`      |  POST  |    HTTP   | 创建消息          |
+| `/api/messages`      |   GET  |    HTTP   | 消息列表（支持筛选和分页） |
+| `/api/messages/{id}` |   GET  |    HTTP   | 查询单条消息        |
+| `/api/messages/{id}` |  PATCH |    HTTP   | 更新消息状态        |
+| `/api/messages/{id}` | DELETE |    HTTP   | 删除消息          |
+| `/api/stats`         |   GET  |    HTTP   | 统计概览（各状态计数）   |
+| `/api/health`        |   GET  |    HTTP   | 健康检查          |
+| `/ws/client`         |   GET  | WebSocket | 客户端实时通道       |
 
 ### 数据模型
 
 **Message** 对象：
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `id` | String (UUID v4) | 消息唯一 ID |
-| `message_type` | String | `"Text"` / `"Image"` / `"File"` / `"Video"` / `"Audio"` |
-| `content` | String | 消息内容 |
-| `recipient` | String | 接收者标识（群号/用户 ID/会话 ID） |
-| `status` | String | `"Pending"` / `"Sending"` / `"Sent"` / `"Failed"` / `"Canceled"` |
-| `created_at` | u64 | 创建时间 (Unix 秒) |
-| `updated_at` | u64 | 更新时间 (Unix 秒) |
-| `retry_count` | u32 | 重试次数 |
+| 字段             | 类型               | 说明                                                               |
+| -------------- | ---------------- | ---------------------------------------------------------------- |
+| `id`           | String (UUID v4) | 消息唯一 ID                                                          |
+| `message_type` | String           | `"Text"` / `"Image"` / `"File"` / `"Video"` / `"Audio"`          |
+| `content`      | String           | 消息内容                                                             |
+| `recipient`    | String           | 接收者标识（群号/用户 ID/会话 ID）                                            |
+| `status`       | String           | `"Pending"` / `"Sending"` / `"Sent"` / `"Failed"` / `"Canceled"` |
+| `created_at`   | u64              | 创建时间 (Unix 秒)                                                    |
+| `updated_at`   | u64              | 更新时间 (Unix 秒)                                                    |
+| `retry_count`  | u32              | 重试次数                                                             |
 
 ### 错误响应格式
 
@@ -57,15 +57,15 @@
 {"error": "错误描述信息"}
 ```
 
-| HTTP 状态码 | 含义 |
-|:---:|------|
-| 201 | 创建成功 |
-| 200 | 查询成功 |
-| 400 | 请求参数错误 |
-| 404 | 消息不存在 |
-| 500 | 服务端错误 |
+| HTTP 状态码 | 含义     |
+| :------: | ------ |
+|    201   | 创建成功   |
+|    200   | 查询成功   |
+|    400   | 请求参数错误 |
+|    404   | 消息不存在  |
+|    500   | 服务端错误  |
 
----
+***
 
 ## 2. HTTP REST API
 
@@ -77,11 +77,11 @@
 
 **请求体** (JSON)：
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|:---:|------|
-| `message_type` | String | ✅ | `"Text"` / `"Image"` / `"File"` / `"Video"` / `"Audio"` |
-| `content` | String | ✅ | 消息内容 |
-| `recipient` | String | ✅ | 接收者标识 |
+| 字段             | 类型     |  必填 | 说明                                                      |
+| -------------- | ------ | :-: | ------------------------------------------------------- |
+| `message_type` | String |  ✅  | `"Text"` / `"Image"` / `"File"` / `"Video"` / `"Audio"` |
+| `content`      | String |  ✅  | 消息内容                                                    |
+| `recipient`    | String |  ✅  | 接收者标识                                                   |
 
 **请求示例**：
 
@@ -112,13 +112,13 @@ curl -X POST http://localhost:8080/api/messages \
 
 **错误响应**：
 
-| 状态码 | 条件 | 示例 |
-|:---:|------|------|
-| `400` | 无效的 message_type | `{"error": "Invalid message type. Use Text, Image, File, Video, or Audio"}` |
-| `500` | 数据库未初始化 | `{"error": "Repository not initialized"}` |
-| `500` | 数据库写入失败 | `{"error": "..."}` |
+|  状态码  | 条件                | 示例                                                                          |
+| :---: | ----------------- | --------------------------------------------------------------------------- |
+| `400` | 无效的 message\_type | `{"error": "Invalid message type. Use Text, Image, File, Video, or Audio"}` |
+| `500` | 数据库未初始化           | `{"error": "Repository not initialized"}`                                   |
+| `500` | 数据库写入失败           | `{"error": "..."}`                                                          |
 
----
+***
 
 ### 2.2 查询消息
 
@@ -128,8 +128,8 @@ curl -X POST http://localhost:8080/api/messages \
 
 **路径参数**：
 
-| 参数 | 类型 | 说明 |
-|------|------|------|
+| 参数   | 类型     | 说明      |
+| ---- | ------ | ------- |
 | `id` | String | 消息 UUID |
 
 **请求示例**：
@@ -155,12 +155,12 @@ curl http://localhost:8080/api/messages/a1b2c3d4-e5f6-7890-abcd-ef1234567890
 
 **错误响应**：
 
-| 状态码 | 条件 | 示例 |
-|:---:|------|------|
-| `404` | 消息不存在 | `{"error": "Message not found"}` |
+|  状态码  | 条件      | 示例                                        |
+| :---: | ------- | ----------------------------------------- |
+| `404` | 消息不存在   | `{"error": "Message not found"}`          |
 | `500` | 数据库未初始化 | `{"error": "Repository not initialized"}` |
 
----
+***
 
 ### 2.3 健康检查
 
@@ -180,7 +180,7 @@ curl http://localhost:8080/api/health
 {"status": "ok"}
 ```
 
----
+***
 
 ### 2.4 消息列表
 
@@ -190,11 +190,11 @@ curl http://localhost:8080/api/health
 
 **查询参数**：
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|:---:|------|
-| `offset` | usize | ❌ | 偏移量，默认 0 |
-| `limit` | usize | ❌ | 每页条数，默认 50，最大 200 |
-| `status` | String | ❌ | 按状态筛选，如 `"Failed"` |
+| 参数       | 类型     |  必填 | 说明                 |
+| -------- | ------ | :-: | ------------------ |
+| `offset` | usize  |  ❌  | 偏移量，默认 0           |
+| `limit`  | usize  |  ❌  | 每页条数，默认 50，最大 200  |
+| `status` | String |  ❌  | 按状态筛选，如 `"Failed"` |
 
 **请求示例**：
 
@@ -227,7 +227,7 @@ curl "http://localhost:8080/api/messages?status=Failed"
 }
 ```
 
----
+***
 
 ### 2.5 更新消息状态
 
@@ -237,9 +237,9 @@ curl "http://localhost:8080/api/messages?status=Failed"
 
 **请求体** (JSON)：
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|:---:|------|
-| `status` | String | ✅ | `"Pending"` / `"Sending"` / `"Sent"` / `"Failed"` / `"Canceled"` |
+| 字段       | 类型     |  必填 | 说明                                                               |
+| -------- | ------ | :-: | ---------------------------------------------------------------- |
+| `status` | String |  ✅  | `"Pending"` / `"Sending"` / `"Sent"` / `"Failed"` / `"Canceled"` |
 
 **请求示例**：
 
@@ -253,11 +253,11 @@ curl -X PATCH http://localhost:8080/api/messages/msg-id \
 
 **错误响应**：
 
-| 状态码 | 条件 | 示例 |
-|:---:|------|------|
+|  状态码  | 条件     | 示例                                                                             |
+| :---: | ------ | ------------------------------------------------------------------------------ |
 | `400` | 无效的状态值 | `{"error": "Invalid status. Use Pending, Sending, Sent, Failed, or Canceled"}` |
 
----
+***
 
 ### 2.6 删除消息
 
@@ -279,11 +279,11 @@ curl -X DELETE http://localhost:8080/api/messages/msg-id
 
 **错误响应**：
 
-| 状态码 | 条件 | 示例 |
-|:---:|------|------|
+|  状态码  | 条件    | 示例                               |
+| :---: | ----- | -------------------------------- |
 | `404` | 消息不存在 | `{"error": "Message not found"}` |
 
----
+***
 
 ### 2.7 统计概览
 
@@ -310,7 +310,7 @@ curl http://localhost:8080/api/stats
 }
 ```
 
----
+***
 
 ## 3. WebSocket API
 
@@ -330,7 +330,7 @@ ws://<host>:<port>/ws/client
 
 所有指令均为 JSON 对象，通过 `type` 字段区分。
 
----
+***
 
 #### 3.2.1 subscribe — 订阅平台/会话
 
@@ -344,13 +344,13 @@ ws://<host>:<port>/ws/client
 }
 ```
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|:---:|------|
-| `type` | String | ✅ | `"subscribe"` |
-| `platforms` | String[] | ❌ | 要订阅的平台列表，如 `["qq"]` |
-| `conversations` | String[] | ❌ | 要订阅的会话 ID 列表 |
+| 字段              | 类型        |  必填 | 说明                  |
+| --------------- | --------- | :-: | ------------------- |
+| `type`          | String    |  ✅  | `"subscribe"`       |
+| `platforms`     | String\[] |  ❌  | 要订阅的平台列表，如 `["qq"]` |
+| `conversations` | String\[] |  ❌  | 要订阅的会话 ID 列表        |
 
----
+***
 
 #### 3.2.2 unsubscribe — 取消订阅
 
@@ -362,15 +362,15 @@ ws://<host>:<port>/ws/client
 }
 ```
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|:---:|------|
-| `type` | String | ✅ | `"unsubscribe"` |
-| `platforms` | String[] | ❌ | 要取消的平台 |
-| `conversations` | String[] | ❌ | 要取消的会话 |
+| 字段              | 类型        |  必填 | 说明              |
+| --------------- | --------- | :-: | --------------- |
+| `type`          | String    |  ✅  | `"unsubscribe"` |
+| `platforms`     | String\[] |  ❌  | 要取消的平台          |
+| `conversations` | String\[] |  ❌  | 要取消的会话          |
 
----
+***
 
-#### 3.2.3 send_message — 发送消息
+#### 3.2.3 send\_message — 发送消息
 
 通过指定平台的 Adapter 发送消息。流程：保存数据库 → 转发 Adapter → 广播给订阅客户端。
 
@@ -386,13 +386,13 @@ ws://<host>:<port>/ws/client
 }
 ```
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|:---:|------|
-| `type` | String | ✅ | `"send_message"` |
-| `data.platform` | String | ✅ | 目标平台，如 `"qq"` |
-| `data.conversation` | String | ✅ | 目标会话 ID（群号/用户 ID） |
-| `data.content` | String | ✅ | 消息内容 |
-| `data.message_type` | String | ❌ | `"Text"`（默认）/ `"Image"` / `"File"` / `"Video"` / `"Audio"` |
+| 字段                  | 类型     |  必填 | 说明                                                         |
+| ------------------- | ------ | :-: | ---------------------------------------------------------- |
+| `type`              | String |  ✅  | `"send_message"`                                           |
+| `data.platform`     | String |  ✅  | 目标平台，如 `"qq"`                                              |
+| `data.conversation` | String |  ✅  | 目标会话 ID（群号/用户 ID）                                          |
+| `data.content`      | String |  ✅  | 消息内容                                                       |
+| `data.message_type` | String |  ❌  | `"Text"`（默认）/ `"Image"` / `"File"` / `"Video"` / `"Audio"` |
 
 **成功响应**：
 
@@ -410,13 +410,13 @@ ws://<host>:<port>/ws/client
 {"type": "error", "error": "Missing data field"}
 ```
 
----
+***
 
 ### 3.3 服务端 → 客户端
 
 服务端会主动推送以下事件。
 
-#### 3.3.1 new_message — 新消息推送
+#### 3.3.1 new\_message — 新消息推送
 
 当有 Adapter 接到新消息或客户端通过 `send_message` 发送成功时广播。
 
@@ -439,20 +439,20 @@ ws://<host>:<port>/ws/client
 }
 ```
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `data.id` | String | 消息 UUID |
-| `data.platform` | String | 来源平台 |
-| `data.conversation` | String | 会话 ID |
-| `data.conversation_name` | String? | 会话名称（可选，群名等） |
-| `data.content` | String | 消息内容 |
-| `data.message_type` | String | `Text` / `Image` / `File` / `Video` / `Audio` |
-| `data.sender` | Object? | 发送者信息（可选） |
-| `data.sender.id` | String | 发送者 ID |
-| `data.sender.name` | String | 发送者名称 |
-| `data.created_at` | u64 | 创建时间 (Unix 秒) |
+| 字段                       | 类型      | 说明                                            |
+| ------------------------ | ------- | --------------------------------------------- |
+| `data.id`                | String  | 消息 UUID                                       |
+| `data.platform`          | String  | 来源平台                                          |
+| `data.conversation`      | String  | 会话 ID                                         |
+| `data.conversation_name` | String? | 会话名称（可选，群名等）                                  |
+| `data.content`           | String  | 消息内容                                          |
+| `data.message_type`      | String  | `Text` / `Image` / `File` / `Video` / `Audio` |
+| `data.sender`            | Object? | 发送者信息（可选）                                     |
+| `data.sender.id`         | String  | 发送者 ID                                        |
+| `data.sender.name`       | String  | 发送者名称                                         |
+| `data.created_at`        | u64     | 创建时间 (Unix 秒)                                 |
 
-#### 3.3.2 adapter_status — 平台连接状态
+#### 3.3.2 adapter\_status — 平台连接状态
 
 当 Adapter 连接/断开时广播。
 
@@ -466,10 +466,10 @@ ws://<host>:<port>/ws/client
 }
 ```
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
+| 字段              | 类型     | 说明   |
+| --------------- | ------ | ---- |
 | `data.platform` | String | 平台名称 |
-| `data.content` | String | 状态描述 |
+| `data.content`  | String | 状态描述 |
 
 #### 3.3.3 error — 错误
 
@@ -477,14 +477,15 @@ ws://<host>:<port>/ws/client
 {"type": "error", "error": "错误描述"}
 ```
 
----
+***
 
 ## 4. Web 页面
 
-| 路径 | 说明 |
-|------|------|
-| `GET /` | SPA 入口 — 内嵌式单页应用 |
-| 仪表盘 `#dashboard` | 6 状态统计卡片 + 最近消息 |
-| 消息流 `#messages` | WebSocket 实时推送 + 搜索/平台筛选 |
-| 发送消息 `#send` | 表单提交 → 选择平台/类型/会话/内容 |
-| 平台状态 `#platforms` | Adapter 连接状态卡片 |
+| 路径                | 说明                       |
+| ----------------- | ------------------------ |
+| `GET /`           | SPA 入口 — 内嵌式单页应用         |
+| 仪表盘 `#dashboard`  | 6 状态统计卡片 + 最近消息          |
+| 消息流 `#messages`   | WebSocket 实时推送 + 搜索/平台筛选 |
+| 发送消息 `#send`      | 表单提交 → 选择平台/类型/会话/内容     |
+| 平台状态 `#platforms` | Adapter 连接状态卡片           |
+
