@@ -142,7 +142,7 @@ impl MessageSegment {
         for seg in segments {
             match seg.seg_type.as_str() {
                 "image" => return "Image",
-                "video" => return "Image",
+                "video" => return "File",
                 "record" => return "File",
                 "file" => return "File",
                 _ => {}
