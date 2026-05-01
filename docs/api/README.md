@@ -1,6 +1,6 @@
 # ReChat-sender API 文档
 
-> 版本: 0.1.0 | 更新: 2026-04-26
+> 版本: 0.2.0 | 更新: 2026-05-01
 
 ---
 
@@ -26,12 +26,13 @@
 | 端点 | 方法 | 类型 | 说明 |
 |------|:---:|:---:|------|
 | `/api/messages` | POST | HTTP | 创建消息 |
+| `/api/messages` | GET | HTTP | 消息列表（支持筛选和分页） |
 | `/api/messages/{id}` | GET | HTTP | 查询单条消息 |
+| `/api/messages/{id}` | PATCH | HTTP | 更新消息状态 |
+| `/api/messages/{id}` | DELETE | HTTP | 删除消息 |
+| `/api/stats` | GET | HTTP | 统计概览（各状态计数） |
 | `/api/health` | GET | HTTP | 健康检查 |
 | `/ws/client` | GET | WebSocket | 客户端实时通道 |
-| `/` | GET | HTML | 首页 |
-| `/send` | GET | HTML | 发送消息页面 |
-| `/status` | GET | HTML | 消息状态查询页面 |
 
 ### 数据模型
 
@@ -40,10 +41,10 @@
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `id` | String (UUID v4) | 消息唯一 ID |
-| `message_type` | String | `"Text"` / `"Image"` / `"File"` |
+| `message_type` | String | `"Text"` / `"Image"` / `"File"` / `"Video"` / `"Audio"` |
 | `content` | String | 消息内容 |
 | `recipient` | String | 接收者标识（群号/用户 ID/会话 ID） |
-| `status` | String | `"Pending"` / `"Sending"` / `"Sent"` / `"Failed"` |
+| `status` | String | `"Pending"` / `"Sending"` / `"Sent"` / `"Failed"` / `"Canceled"` |
 | `created_at` | u64 | 创建时间 (Unix 秒) |
 | `updated_at` | u64 | 更新时间 (Unix 秒) |
 | `retry_count` | u32 | 重试次数 |
@@ -78,7 +79,7 @@
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|:---:|------|
-| `message_type` | String | ✅ | `"Text"` / `"Image"` / `"File"` |
+| `message_type` | String | ✅ | `"Text"` / `"Image"` / `"File"` / `"Video"` / `"Audio"` |
 | `content` | String | ✅ | 消息内容 |
 | `recipient` | String | ✅ | 接收者标识 |
 
@@ -113,7 +114,7 @@ curl -X POST http://localhost:8080/api/messages \
 
 | 状态码 | 条件 | 示例 |
 |:---:|------|------|
-| `400` | 无效的 message_type | `{"error": "Invalid message type"}` |
+| `400` | 无效的 message_type | `{"error": "Invalid message type. Use Text, Image, File, Video, or Audio"}` |
 | `500` | 数据库未初始化 | `{"error": "Repository not initialized"}` |
 | `500` | 数据库写入失败 | `{"error": "..."}` |
 
@@ -177,6 +178,136 @@ curl http://localhost:8080/api/health
 
 ```json
 {"status": "ok"}
+```
+
+---
+
+### 2.4 消息列表
+
+> `GET /api/messages`
+
+分页查询消息列表，支持按状态筛选。
+
+**查询参数**：
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|:---:|------|
+| `offset` | usize | ❌ | 偏移量，默认 0 |
+| `limit` | usize | ❌ | 每页条数，默认 50，最大 200 |
+| `status` | String | ❌ | 按状态筛选，如 `"Failed"` |
+
+**请求示例**：
+
+```bash
+# 获取最新 20 条
+curl "http://localhost:8080/api/messages?limit=20"
+
+# 查看所有失败的消息
+curl "http://localhost:8080/api/messages?status=Failed"
+```
+
+**成功响应** `200 OK`：
+
+```json
+{
+  "messages": [
+    {
+      "id": "a1b2c3d4-...",
+      "message_type": "Text",
+      "content": "Hello",
+      "recipient": "group_123",
+      "status": "Sent",
+      "created_at": 1714000000,
+      "updated_at": 1714000005,
+      "retry_count": 0
+    }
+  ],
+  "offset": 0,
+  "limit": 20
+}
+```
+
+---
+
+### 2.5 更新消息状态
+
+> `PATCH /api/messages/{id}`
+
+更新消息状态。
+
+**请求体** (JSON)：
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|:---:|------|
+| `status` | String | ✅ | `"Pending"` / `"Sending"` / `"Sent"` / `"Failed"` / `"Canceled"` |
+
+**请求示例**：
+
+```bash
+curl -X PATCH http://localhost:8080/api/messages/msg-id \
+  -H "Content-Type: application/json" \
+  -d '{"status": "Canceled"}'
+```
+
+**成功响应** `200 OK`：返回更新后的消息对象。
+
+**错误响应**：
+
+| 状态码 | 条件 | 示例 |
+|:---:|------|------|
+| `400` | 无效的状态值 | `{"error": "Invalid status. Use Pending, Sending, Sent, Failed, or Canceled"}` |
+
+---
+
+### 2.6 删除消息
+
+> `DELETE /api/messages/{id}`
+
+删除指定消息。
+
+**请求示例**：
+
+```bash
+curl -X DELETE http://localhost:8080/api/messages/msg-id
+```
+
+**成功响应** `200 OK`：
+
+```json
+{"deleted": true}
+```
+
+**错误响应**：
+
+| 状态码 | 条件 | 示例 |
+|:---:|------|------|
+| `404` | 消息不存在 | `{"error": "Message not found"}` |
+
+---
+
+### 2.7 统计概览
+
+> `GET /api/stats`
+
+获取各状态消息计数及总数。
+
+**请求示例**：
+
+```bash
+curl http://localhost:8080/api/stats
+```
+
+**成功响应** `200 OK`：
+
+```json
+{
+  "pending": 5,
+  "sending": 2,
+  "sent": 128,
+  "failed": 3,
+  "canceled": 1,
+  "total": 139
+}
 ```
 
 ---
@@ -261,7 +392,7 @@ ws://<host>:<port>/ws/client
 | `data.platform` | String | ✅ | 目标平台，如 `"qq"` |
 | `data.conversation` | String | ✅ | 目标会话 ID（群号/用户 ID） |
 | `data.content` | String | ✅ | 消息内容 |
-| `data.message_type` | String | ❌ | `"Text"`（默认）/ `"Image"` / `"File"` |
+| `data.message_type` | String | ❌ | `"Text"`（默认）/ `"Image"` / `"File"` / `"Video"` / `"Audio"` |
 
 **成功响应**：
 
@@ -315,7 +446,7 @@ ws://<host>:<port>/ws/client
 | `data.conversation` | String | 会话 ID |
 | `data.conversation_name` | String? | 会话名称（可选，群名等） |
 | `data.content` | String | 消息内容 |
-| `data.message_type` | String | `Text` / `Image` / `File` |
+| `data.message_type` | String | `Text` / `Image` / `File` / `Video` / `Audio` |
 | `data.sender` | Object? | 发送者信息（可选） |
 | `data.sender.id` | String | 发送者 ID |
 | `data.sender.name` | String | 发送者名称 |
@@ -352,8 +483,8 @@ ws://<host>:<port>/ws/client
 
 | 路径 | 说明 |
 |------|------|
-| `GET /` | 首页 — 导航链接 |
-| `GET /send` | 消息发送表单 — 选择消息类型、填写接收者和内容，提交到 `/api/messages` |
-| `GET /status` | 消息状态查询 — 输入消息 ID，调用 `/api/messages/{id}` 显示结果 |
-
-Web 页面为静态 HTML，内嵌 JavaScript 通过 `fetch` 调用 REST API。适合开发调试和简单管理。
+| `GET /` | SPA 入口 — 内嵌式单页应用 |
+| 仪表盘 `#dashboard` | 6 状态统计卡片 + 最近消息 |
+| 消息流 `#messages` | WebSocket 实时推送 + 搜索/平台筛选 |
+| 发送消息 `#send` | 表单提交 → 选择平台/类型/会话/内容 |
+| 平台状态 `#platforms` | Adapter 连接状态卡片 |

@@ -26,13 +26,15 @@
 | **多平台消息接入**     |  ✅  | OneBot v11 (NapCat/QQ)，可扩展至微信/Telegram/Discord            |
 | **实时消息推送**      |  ✅  | 双 WebSocket 通道：平台入站 `/onebot/v11/ws` + 客户端出站 `/ws/client` |
 | **消息广播中枢**      |  ✅  | `MessageBroadcaster` 按平台/会话订阅，精准推送                        |
-| **消息生命周期管理**    |  ✅  | Pending → Sending → Sent → Failed 全状态流转                   |
+| **消息生命周期管理**    |  ✅  | Pending → Sending → Sent → Failed → Canceled 全状态流转          |
+| **消息类型识别**       |  ✅  | Text / Image / File / Video / Audio 五大消息类型                   |
 | **Web 管理界面**    |  ✅  | Vanilla JS SPA：仪表盘 / 消息流 / 发送消息 / 平台状态                    |
 | **暗色模式**        |  ✅  | 亮色/暗色/Auto 三模式，localStorage 持久化                           |
-| **RESTful API** |  ✅  | 创建/查询消息，健康检查（[完整文档](docs/api/README.md)）                  |
+| **RESTful API** |  ✅  | 创建/查询/列表/更新状态/删除消息/统计概览 + 健康检查（[完整文档](docs/api/README.md)）                  |
 | **CLI 工具**      |  ✅  | 命令行发送消息 / 查询状态                                            |
 | **Adapter 架构**  |  ✅  | 可插拔的适配器系统，方便接入新平台                                         |
 | **Plugin 架构**   |  ✅  | 消息处理插件系统（过滤/转换/加密）                                        |
+| **消息发送调度器**     |  ✅  | 后台 tokio task 轮询 + 重试 + 并发控制 + 原子认领                         |
 | **SQLite 持久化**  |  ✅  | 消息数据本地存储，零配置                                              |
 | **结构化日志**       |  ✅  | tracing + 文件/双输出，文件创建失败自动降级                               |
 
@@ -51,15 +53,15 @@
     ▼                    ▼                      ▼                        ▼
  MessageEvent         OneBotAdapter         Message (DB)          MessageBroadcaster
          │              .send_message()          │                  (广播中枢)
-         │                    │                  │                        ▲
-         ▼                    ▼                  │                        │
-    OneBotAdapter ◀── Message (内部) ◀───────────┘                        │
-    .send_message()                                                        │
-         │                                                                 │
-         ▼                                                                 │
-  send_group_msg / send_private_msg ──WS──→ NapCat                         │
-                                                                           │
-  ┌────────────────────────────────────────────────────────────────────────┘
+         │                    │                  │   ▲                     ▲
+         ▼                    ▼                  │   │                     │
+    OneBotAdapter ◀── Message (内部) ◀── MessageDispatcher ◀── 轮询 Pending
+    .send_message()                       (调度器 + 重试)
+         │
+         ▼
+  send_group_msg / send_private_msg ──WS──→ NapCat
+
+  ┌─────────────────────────────────────────────────────────────────────┘
   │
   ▼
  保存 DB ──→ broadcast ──→ 所有订阅该平台的 Web UI 实时收到
@@ -83,6 +85,7 @@ src/
 │   ├── adapter.rs               # Adapter trait + AdapterManager
 │   ├── broadcaster.rs           # 消息广播中枢 (MessageBroadcaster)
 │   ├── config.rs                # 配置管理
+│   ├── dispatcher.rs            # 消息发送调度器 (轮询 + 重试 + 原子认领)
 │   ├── logging.rs               # 日志初始化
 │   ├── message.rs               # 消息仓库 (SQLite)
 │   └── plugin.rs                # Plugin trait + PluginManager
@@ -152,11 +155,15 @@ WS 地址: ws://localhost:8080/onebot/v11/ws
 
 ### HTTP API
 
-| 方法     | 路径                   | 说明   |
-| ------ | -------------------- | ---- |
-| `POST` | `/api/messages`      | 创建消息 |
-| `GET`  | `/api/messages/{id}` | 查询消息 |
-| `GET`  | `/api/health`        | 健康检查 |
+| 方法     | 路径                   | 说明     |
+| ------ | -------------------- | ------ |
+| `POST` | `/api/messages`      | 创建消息   |
+| `GET`  | `/api/messages`      | 消息列表（支持 `?offset=&limit=&status=`） |
+| `GET`  | `/api/messages/{id}` | 查询单条消息 |
+| `PATCH` | `/api/messages/{id}` | 更新消息状态 |
+| `DELETE` | `/api/messages/{id}` | 删除消息   |
+| `GET`  | `/api/stats`         | 统计概览   |
+| `GET`  | `/api/health`        | 健康检查   |
 
 ### WebSocket 指令
 
@@ -182,7 +189,7 @@ WS 地址: ws://localhost:8080/onebot/v11/ws
 ## ⌨️ 命令行工具
 
 ```bash
-# 发送消息
+# 发送消息 (支持 text / image / file / video / audio)
 cargo run -- send -t text -r user1 -c "Hello"
 
 # 查询状态
@@ -195,7 +202,7 @@ cargo run -- status -i <message-id>
 
 | 页面   | Hash         | 功能                  |
 | ---- | ------------ | ------------------- |
-| 仪表盘  | `#dashboard` | 统计卡片 + 最近消息         |
+| 仪表盘  | `#dashboard` | 6 状态统计卡片 + 最近消息（调用 `/api/stats`）         |
 | 消息流  | `#messages`  | WebSocket 实时推送 + 筛选 |
 | 发送消息 | `#send`      | 表单 → 平台发送           |
 | 平台状态 | `#platforms` | Adapter 连接状态        |
@@ -252,12 +259,10 @@ cargo fmt
 
 | 优先级 | 功能                           |
 | :-: | ---------------------------- |
-|  🔴 | 消息发送调度器 (后台任务发送 + 重试)        |
-|  🟡 | 消息列表分页 API                   |
-|  🟡 | 更多平台适配 (微信/Telegram/Discord) |
+|   | 更多平台适配 (微信/Telegram/Discord) |
 |  🟡 | Redis 消息队列集成                 |
 |  🟢 | Plugin 实现 (加密/格式化/翻译)        |
-|  🟢 | 认证授权机制                       |
+|  🟢 | Docker 部署                     |
 
 ***
 
