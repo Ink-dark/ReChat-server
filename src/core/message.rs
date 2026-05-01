@@ -14,6 +14,8 @@ fn read_message_row(
         "Text" => MessageType::Text,
         "Image" => MessageType::Image,
         "File" => MessageType::File,
+        "Video" => MessageType::Video,
+        "Audio" => MessageType::Audio,
         _ => return None,
     };
     let status = match status_str.as_str() {
@@ -121,6 +123,8 @@ impl MessageRepository {
                 "Text" => crate::models::message::MessageType::Text,
                 "Image" => crate::models::message::MessageType::Image,
                 "File" => crate::models::message::MessageType::File,
+                "Video" => crate::models::message::MessageType::Video,
+                "Audio" => crate::models::message::MessageType::Audio,
                 _ => return Err(rusqlite::Error::InvalidQuery),
             };
 
@@ -156,7 +160,7 @@ impl MessageRepository {
     pub fn get_pending_messages(&self, limit: usize) -> Result<Vec<Message>> {
         let mut stmt = self.conn.prepare(
             "SELECT id, message_type, content, recipient, status, created_at, updated_at, retry_count 
-             FROM messages WHERE status = 'Pending' OR status = 'Sending' ORDER BY created_at ASC LIMIT ?",
+             FROM messages WHERE status = 'Pending' ORDER BY created_at ASC LIMIT ?",
         )?;
         let mut rows = stmt.query([&limit])?;
         let mut messages = Vec::new();
@@ -175,6 +179,8 @@ impl MessageRepository {
                 "Text" => crate::models::message::MessageType::Text,
                 "Image" => crate::models::message::MessageType::Image,
                 "File" => crate::models::message::MessageType::File,
+                "Video" => crate::models::message::MessageType::Video,
+                "Audio" => crate::models::message::MessageType::Audio,
                 _ => continue,
             };
 
@@ -219,15 +225,15 @@ impl MessageRepository {
         Ok(())
     }
 
-    /// Atomically claim a message for sending: only succeeds if status is Pending or Sending.
-    /// Returns true if claimed, false if the message was already canceled/failed/sent.
+    /// Atomically claim a message for sending: only succeeds if status is Pending.
+    /// Returns true if claimed, false if already claimed/canceled/failed/sent.
     pub fn try_claim_message(&self, id: &str) -> Result<bool> {
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
             .as_secs() as i64;
         let affected = self.conn.execute(
-            "UPDATE messages SET status = 'Sending', updated_at = ?1 WHERE id = ?2 AND status IN ('Pending', 'Sending')",
+            "UPDATE messages SET status = 'Sending', updated_at = ?1 WHERE id = ?2 AND status = 'Pending'",
             rusqlite::params![now, id],
         )?;
         Ok(affected > 0)
