@@ -39,10 +39,7 @@ impl Adapter for MockAdapter {
     fn send_message(&self, _message: &Message) -> Result<(), Box<dyn std::error::Error>> {
         if self.should_fail {
             self.fail_count.fetch_add(1, Ordering::SeqCst);
-            Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "simulated failure",
-            )))
+            Err(Box::new(std::io::Error::other("simulated failure")))
         } else {
             Ok(())
         }
@@ -83,7 +80,7 @@ async fn test_dispatcher_sends_pending_message() {
     shutdown.store(true, Ordering::Relaxed);
     tokio::time::sleep(std::time::Duration::from_millis(500)).await;
 
-    let repo2 = MessageRepository::new(&temp_db.path().to_str().unwrap()).unwrap();
+    let repo2 = MessageRepository::new(temp_db.path().to_str().unwrap()).unwrap();
     let updated = repo2.get(&msg.id).unwrap().unwrap();
     assert_eq!(updated.status, MessageStatus::Sent);
 }
@@ -117,7 +114,7 @@ async fn test_dispatcher_marks_as_failed_after_max_retries() {
     shutdown.store(true, Ordering::Relaxed);
     tokio::time::sleep(std::time::Duration::from_millis(500)).await;
 
-    let repo2 = MessageRepository::new(&temp_db.path().to_str().unwrap()).unwrap();
+    let repo2 = MessageRepository::new(temp_db.path().to_str().unwrap()).unwrap();
     let updated = repo2.get(&msg.id).unwrap().unwrap();
     assert_eq!(updated.status, MessageStatus::Failed);
     assert!(updated.retry_count > 0);
