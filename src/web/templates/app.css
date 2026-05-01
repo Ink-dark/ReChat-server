@@ -399,3 +399,64 @@ body {
 
 .mt-3 { margin-top: 12px; }
 .mt-4 { margin-top: 16px; }
+
+/* ======== Login Overlay ======== */
+
+.login-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+}
+
+.login-card {
+    background: var(--surface);
+    border-radius: 14px;
+    padding: 40px;
+    width: 380px;
+    max-width: 90vw;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    text-align: center;
+}
+
+.login-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.login-brand h2 {
+    font-size: 22px;
+    color: var(--text-main);
+}
+
+.login-desc {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+}
+
+.login-error {
+    font-size: 13px;
+    color: var(--danger);
+    margin-top: 10px;
+    min-height: 20px;
+}
+
+.login-btn {
+    width: 100%;
+    margin-top: 8px;
+    justify-content: center;
+}
+
+.login-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 16px;
+}
