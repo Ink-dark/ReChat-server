@@ -204,7 +204,7 @@ async fn handle_command(
                     error = %e,
                     "Failed to send message via adapter"
                 );
-                let _ = crate::REPO.with(|repo| {
+                crate::REPO.with(|repo| {
                     if let Some(r) = repo.borrow().as_ref() {
                         let _ = r.update_message_status(
                             &message.id,
