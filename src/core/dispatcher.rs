@@ -96,6 +96,26 @@ impl MessageDispatcher {
                             }
                         };
 
+                        // Atomically claim: only proceeds if Pending/Sending, not Canceled
+                        match repo.try_claim_message(&message.id) {
+                            Ok(true) => {}
+                            Ok(false) => {
+                                tracing::info!(
+                                    message_id = %message.id,
+                                    "Message already claimed or canceled, skipping"
+                                );
+                                return;
+                            }
+                            Err(e) => {
+                                tracing::error!(
+                                    error = %e,
+                                    message_id = %message.id,
+                                    "Failed to claim message"
+                                );
+                                return;
+                            }
+                        }
+
                         let mut sent = false;
 
                         for attempt in 0..=max_retries {

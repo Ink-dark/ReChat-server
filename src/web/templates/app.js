@@ -164,17 +164,17 @@ function updateWSStatus(connected) {
 // ========== Dashboard ==========
 
 function refreshDashboard() {
-    try {
-        j('/api/health').then(function () {
-            document.getElementById('statToday').textContent = messageCache.length;
-            document.getElementById('statPlatforms').textContent = '--';
-            document.getElementById('statClients').textContent = '--';
-            document.getElementById('statPending').textContent = '--';
-            renderRecentMessages();
-        });
-    } catch (e) {
-        document.getElementById('statToday').textContent = '错误';
-    }
+    j('/api/stats').then(function (stats) {
+        document.getElementById('statPending').textContent = stats.pending || 0;
+        document.getElementById('statSending').textContent = stats.sending || 0;
+        document.getElementById('statSent').textContent = stats.sent || 0;
+        document.getElementById('statFailed').textContent = stats.failed || 0;
+        document.getElementById('statCanceled').textContent = stats.canceled || 0;
+        document.getElementById('statTotal').textContent = stats.total || 0;
+    }).catch(function () {
+        document.getElementById('statPending').textContent = 'ERR';
+    });
+    renderRecentMessages();
 }
 
 function renderRecentMessages() {
@@ -188,9 +188,9 @@ function renderRecentMessages() {
         var time = new Date(m.created_at * 1000).toLocaleTimeString('zh-CN');
         return '<tr>' +
             '<td><span class="badge info">' + esc(m.platform) + '</span></td>' +
-            '<td>' + esc(m.conversation.substring(0, 20)) + '</td>' +
-            '<td>' + esc(m.content.substring(0, 50)) + '</td>' +
-            '<td><span class="badge success">已接收</span></td>' +
+            '<td>' + esc((m.conversation || '').substring(0, 20)) + '</td>' +
+            '<td>' + esc((m.content || '').substring(0, 50)) + '</td>' +
+            '<td>' + statusBadge(m.status || 'Pending') + '</td>' +
             '<td>' + time + '</td>' +
             '</tr>';
     }).join('');
@@ -214,11 +214,11 @@ function renderMessages() {
         var sender = m.sender ? m.sender.name : '--';
         return '<tr>' +
             '<td><span class="badge info">' + esc(m.platform) + '</span></td>' +
-            '<td>' + esc(m.conversation.substring(0, 24)) + '</td>' +
+            '<td>' + esc((m.conversation || '').substring(0, 24)) + '</td>' +
             '<td>' + esc(sender) + '</td>' +
-            '<td>' + esc(m.content.substring(0, 40)) + '</td>' +
+            '<td>' + esc((m.content || '').substring(0, 40)) + '</td>' +
             '<td>' + esc(m.message_type) + '</td>' +
-            '<td><span class="badge success">已接收</span></td>' +
+            '<td>' + statusBadge(m.status || 'Pending') + '</td>' +
             '<td>' + time + '</td>' +
             '</tr>';
     }).join('');
@@ -297,6 +297,25 @@ function refreshPlatforms() {
 function esc(s) {
     if (!s) return '';
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function statusBadge(status) {
+    var map = {
+        Sent: 'success',
+        Pending: 'warning',
+        Sending: 'info',
+        Failed: 'danger',
+        Canceled: 'danger'
+    };
+    var label = {
+        Sent: '已发送',
+        Pending: '待发送',
+        Sending: '发送中',
+        Failed: '失败',
+        Canceled: '已取消'
+    };
+    var cls = map[status] || 'info';
+    return '<span class="badge ' + cls + '">' + (label[status] || status || '未知') + '</span>';
 }
 
 // ========== Boot ==========
