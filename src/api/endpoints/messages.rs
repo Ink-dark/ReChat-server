@@ -120,3 +120,136 @@ pub async fn get_message(id: web::Path<String>) -> impl Responder {
 pub async fn health_check() -> impl Responder {
     HttpResponse::Ok().json(serde_json::json!({"status": "ok"}))
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MessageListQuery {
+    pub offset: Option<usize>,
+    pub limit: Option<usize>,
+    pub status: Option<String>,
+}
+
+pub async fn list_messages(query: web::Query<MessageListQuery>) -> impl Responder {
+    let offset = query.offset.unwrap_or(0);
+    let limit = query.limit.unwrap_or(50).min(200);
+    let status = query.status.as_deref();
+
+    let result = crate::REPO.with(|repo| {
+        repo.borrow()
+            .as_ref()
+            .map(|r| r.list(status, offset, limit))
+    });
+    match result {
+        Some(Ok(messages)) => {
+            let items: Vec<MessageResponse> =
+                messages.into_iter().map(MessageResponse::from).collect();
+            HttpResponse::Ok().json(serde_json::json!({
+                "messages": items,
+                "offset": offset,
+                "limit": limit,
+            }))
+        }
+        Some(Err(e)) => {
+            tracing::error!(error = %e, "Failed to list messages");
+            HttpResponse::InternalServerError().json(serde_json::json!({"error": e.to_string()}))
+        }
+        None => {
+            tracing::error!("Repository not initialized during list call");
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": "Repository not initialized"}))
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PatchMessageRequest {
+    pub status: String,
+}
+
+pub async fn update_message(
+    id: web::Path<String>,
+    body: web::Json<PatchMessageRequest>,
+) -> impl Responder {
+    let new_status = match body.status.as_str() {
+        "Canceled" | "Failed" => crate::models::message::MessageStatus::Failed,
+        "Pending" => crate::models::message::MessageStatus::Pending,
+        _ => {
+            return HttpResponse::BadRequest()
+                .json(serde_json::json!({"error": "Invalid status. Use Pending, Failed, or Canceled"}));
+        }
+    };
+
+    let result = crate::REPO.with(|repo| {
+        repo.borrow()
+            .as_ref()
+            .map(|r| r.update_message_status(&id, &new_status))
+    });
+    match result {
+        Some(Ok(())) => {
+            let msg_result = crate::REPO.with(|repo| {
+                repo.borrow().as_ref().map(|r| r.get(&id))
+            });
+            match msg_result {
+                Some(Ok(Some(msg))) => HttpResponse::Ok().json(MessageResponse::from(msg)),
+                _ => HttpResponse::Ok().json(serde_json::json!({"status": "updated"})),
+            }
+        }
+        Some(Err(e)) => {
+            tracing::error!(error = %e, message_id = %id.into_inner(), "Failed to update message");
+            HttpResponse::InternalServerError().json(serde_json::json!({"error": e.to_string()}))
+        }
+        None => {
+            tracing::error!("Repository not initialized during update call");
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": "Repository not initialized"}))
+        }
+    }
+}
+
+pub async fn delete_message(id: web::Path<String>) -> impl Responder {
+    let result = crate::REPO.with(|repo| {
+        repo.borrow().as_ref().map(|r| r.delete(&id))
+    });
+    match result {
+        Some(Ok(true)) => HttpResponse::Ok().json(serde_json::json!({"deleted": true})),
+        Some(Ok(false)) => {
+            HttpResponse::NotFound().json(serde_json::json!({"error": "Message not found"}))
+        }
+        Some(Err(e)) => {
+            tracing::error!(error = %e, message_id = %id.into_inner(), "Failed to delete message");
+            HttpResponse::InternalServerError().json(serde_json::json!({"error": e.to_string()}))
+        }
+        None => {
+            tracing::error!("Repository not initialized during delete call");
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": "Repository not initialized"}))
+        }
+    }
+}
+
+pub async fn get_stats() -> impl Responder {
+    let result = crate::REPO.with(|repo| {
+        let r = repo.borrow();
+        let repo_ref = r.as_ref()?;
+        let pending = repo_ref.count_by_status("Pending").unwrap_or(0);
+        let sending = repo_ref.count_by_status("Sending").unwrap_or(0);
+        let sent = repo_ref.count_by_status("Sent").unwrap_or(0);
+        let failed = repo_ref.count_by_status("Failed").unwrap_or(0);
+        Some((pending, sending, sent, failed))
+    });
+    match result {
+        Some((pending, sending, sent, failed)) => {
+            HttpResponse::Ok().json(serde_json::json!({
+                "pending": pending,
+                "sending": sending,
+                "sent": sent,
+                "failed": failed,
+                "total": pending + sending + sent + failed,
+            }))
+        }
+        None => {
+            tracing::error!("Repository not initialized during stats call");
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({"error": "Repository not initialized"}))
+        }
+    }
+}

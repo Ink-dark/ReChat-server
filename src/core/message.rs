@@ -1,8 +1,41 @@
-use crate::models::message::{Message, MessageStatus};
+use crate::models::message::{Message, MessageStatus, MessageType};
 use rusqlite::{Connection, Result};
 
 pub struct MessageRepository {
     conn: Connection,
+}
+
+fn read_message_row(
+    row: (String, String, String, String, String, i64, i64, u32),
+) -> Option<Message> {
+    let (id, mt, content, recipient, status_str, created_at_secs, updated_at_secs, retry_count) = row;
+    let message_type = match mt.as_str() {
+        "Text" => MessageType::Text,
+        "Image" => MessageType::Image,
+        "File" => MessageType::File,
+        _ => return None,
+    };
+    let status = match status_str.as_str() {
+        "Pending" => MessageStatus::Pending,
+        "Sending" => MessageStatus::Sending,
+        "Sent" => MessageStatus::Sent,
+        "Failed" => MessageStatus::Failed,
+        _ => return None,
+    };
+    let created_at =
+        std::time::UNIX_EPOCH + std::time::Duration::from_secs(created_at_secs as u64);
+    let updated_at =
+        std::time::UNIX_EPOCH + std::time::Duration::from_secs(updated_at_secs as u64);
+    Some(Message {
+        id,
+        message_type,
+        content,
+        recipient,
+        status,
+        created_at,
+        updated_at,
+        retry_count,
+    })
 }
 
 impl MessageRepository {
@@ -194,5 +227,72 @@ impl MessageRepository {
             rusqlite::params![now, id],
         )?;
         Ok(())
+    }
+
+    pub fn list(
+        &self,
+        status: Option<&str>,
+        offset: usize,
+        limit: usize,
+    ) -> Result<Vec<Message>> {
+        let mut messages = Vec::new();
+        if let Some(s) = status {
+            let mut stmt = self.conn.prepare(
+                "SELECT id, message_type, content, recipient, status, created_at, updated_at, retry_count FROM messages WHERE status = ?1 ORDER BY created_at DESC LIMIT ?2 OFFSET ?3",
+            )?;
+            let rows = stmt.query_map(rusqlite::params![s, limit, offset], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                    row.get::<_, String>(3)?,
+                    row.get::<_, String>(4)?,
+                    row.get::<_, i64>(5)?,
+                    row.get::<_, i64>(6)?,
+                    row.get::<_, u32>(7)?,
+                ))
+            })?;
+            for row in rows {
+                if let Some(msg) = read_message_row(row?) {
+                    messages.push(msg);
+                }
+            }
+        } else {
+            let mut stmt = self.conn.prepare(
+                "SELECT id, message_type, content, recipient, status, created_at, updated_at, retry_count FROM messages ORDER BY created_at DESC LIMIT ?1 OFFSET ?2",
+            )?;
+            let rows = stmt.query_map(rusqlite::params![limit, offset], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                    row.get::<_, String>(3)?,
+                    row.get::<_, String>(4)?,
+                    row.get::<_, i64>(5)?,
+                    row.get::<_, i64>(6)?,
+                    row.get::<_, u32>(7)?,
+                ))
+            })?;
+            for row in rows {
+                if let Some(msg) = read_message_row(row?) {
+                    messages.push(msg);
+                }
+            }
+        }
+        Ok(messages)
+    }
+
+    pub fn count_by_status(&self, status: &str) -> Result<usize> {
+        let count: i64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM messages WHERE status = ?1",
+            rusqlite::params![status],
+            |row| row.get(0),
+        )?;
+        Ok(count as usize)
+    }
+
+    pub fn delete(&self, id: &str) -> Result<bool> {
+        let affected = self.conn.execute("DELETE FROM messages WHERE id = ?1", rusqlite::params![id])?;
+        Ok(affected > 0)
     }
 }

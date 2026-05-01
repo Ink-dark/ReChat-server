@@ -8,9 +8,10 @@ pub fn config(cfg: &mut web::ServiceConfig) {
 
     cfg.service(
         web::scope("/api")
-            .service(web::resource("/messages").route(web::post().to(messages::create_message)))
-            .service(web::resource("/messages/{id}").route(web::get().to(messages::get_message)))
+            .service(web::resource("/messages").route(web::get().to(messages::list_messages)).route(web::post().to(messages::create_message)))
+            .service(web::resource("/messages/{id}").route(web::get().to(messages::get_message)).route(web::patch().to(messages::update_message)).route(web::delete().to(messages::delete_message)))
             .service(web::resource("/health").route(web::get().to(messages::health_check)))
+            .service(web::resource("/stats").route(web::get().to(messages::get_stats)))
             .route("/auth/verify", web::post().to(auth_verify)),
     )
     .route("/ws/client", web::get().to(ws_client::ws_client))
