@@ -46,10 +46,7 @@ impl Adapter for MockAdapter {
     fn send_message(&self, _message: &Message) -> Result<(), Box<dyn std::error::Error>> {
         self.call_count.fetch_add(1, Ordering::SeqCst);
         if self.should_fail.load(Ordering::SeqCst) {
-            Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "mock send failure",
-            )))
+            Err(Box::new(std::io::Error::other("mock send failure")))
         } else {
             Ok(())
         }
@@ -83,10 +80,10 @@ async fn wait_for_status(
 ) -> bool {
     let start = std::time::Instant::now();
     loop {
-        if let Ok(Some(msg)) = repo.get(msg_id) {
-            if msg.status == expected {
-                return true;
-            }
+        if let Ok(Some(msg)) = repo.get(msg_id)
+            && msg.status == expected
+        {
+            return true;
         }
         if start.elapsed().as_secs() >= timeout_secs {
             return false;
