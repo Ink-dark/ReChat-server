@@ -132,17 +132,38 @@ fn handle_onebot_event(broadcaster: &MessageBroadcaster, event: OneBotEvent) {
 
 fn handle_message_event(broadcaster: &MessageBroadcaster, event: MessageEvent) {
     let platform = "qq".to_string();
-    let conversation = if let Some(gid) = event.group_id {
-        format!("group_{}", gid)
+    let (conversation, conversation_name) = if let Some(gid) = event.group_id {
+        (
+            format!("group_{}", gid),
+            event
+                .sender
+                .as_ref()
+                .map(|s| s.card.clone().unwrap_or_else(|| s.nickname.clone()))
+                .or_else(|| Some(format!("群聊 {}", gid))),
+        )
     } else {
-        format!("private_{}", event.user_id)
+        (
+            format!("private_{}", event.user_id),
+            event
+                .sender
+                .as_ref()
+                .map(|s| s.nickname.clone())
+                .or_else(|| Some(format!("用户 {}", event.user_id))),
+        )
     };
 
     let raw_text = super::protocol::MessageSegment::segments_to_text(&event.message);
+    let msg_type_str = super::protocol::MessageSegment::segments_message_type(&event.message);
+
+    let message_type = match msg_type_str {
+        "Image" => MessageType::Image,
+        "File" => MessageType::File,
+        _ => MessageType::Text,
+    };
 
     let message = Message {
         id: uuid::Uuid::new_v4().to_string(),
-        message_type: MessageType::Text,
+        message_type,
         content: raw_text.clone(),
         recipient: conversation.clone(),
         status: MessageStatus::Pending,
@@ -168,9 +189,9 @@ fn handle_message_event(broadcaster: &MessageBroadcaster, event: MessageEvent) {
             id: message.id.clone(),
             platform: platform.clone(),
             conversation: conversation.clone(),
-            conversation_name: None,
+            conversation_name,
             content: raw_text,
-            message_type: "Text".into(),
+            message_type: msg_type_str.into(),
             sender: event.sender.map(|s| crate::core::broadcaster::SenderInfo {
                 id: s.user_id.to_string(),
                 name: s.card.unwrap_or(s.nickname),

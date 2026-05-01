@@ -14,6 +14,8 @@
 | 04-30 | Token 认证系统 | 启动生成 UUID → 登录遮罩 → localStorage → API/WS 携带 |
 | 04-30 | CI 格式修复 × 3 | import order / 行宽 / 链式调用换行 |
 | 05-01 | 集成测试补全 | 39 个新测试: broadcaster(11) + protocol(21) + auth(7) |
+| 05-01 | Phase B: API 补全 | list/stats/PATCH/DELETE 全部完成；status Canceled 拆分修复 |
+| 05-01 | Phase C1-C2: 消息流 + Dispatcher | 图片/文件类型扩展、sender 补全、Canceled 跳过、Web 前端同步 |
 
 ---
 
@@ -31,21 +33,21 @@
 | A4 | 调度器生命周期管理 | 🔴 | main.rs + dispatcher.rs | start / graceful shutdown |
 | A5 | 集成测试 | 🔴 | tests/dispatcher.rs | 模拟发送成功/失败/超时/最大重试 |
 
-### 🟡 Phase B: API 补全
+### 🟡 Phase B: API 补全 ✅ 已完成
 
 | # | 任务 | 优先级 | 说明 |
 |:--|------|:---:|------|
-| B1 | `GET /api/messages` 列表分页 | 🟡 | 支持 `?limit=&offset=&status=` 筛选 |
-| B2 | `PATCH /api/messages/{id}` 取消/重发 | 🟡 | `{"status": "Failed"}` 取消待发送消息 |
-| B3 | `GET /api/stats` 统计概览 | 🟡 | 今日消息数/各状态计数/平台分布 |
-| B4 | `DELETE /api/messages/{id}` | 🟢 | 删除消息记录 |
+| B1 | `GET /api/messages` 列表分页 | ✅ | 支持 `?limit=&offset=&status=` 筛选 |
+| B2 | `PATCH /api/messages/{id}` 取消/重发 | ✅ | 支持 Pending/Sending/Sent/Failed/Canceled |
+| B3 | `GET /api/stats` 统计概览 | ✅ | 5种状态计数 + total |
+| B4 | `DELETE /api/messages/{id}` | ✅ | 删除消息记录 |
 
-### 🟡 Phase C: 消息流完善
+### 🟡 Phase C: 消息流完善 🔴 进行中
 
 | # | 任务 | 优先级 | 说明 |
 |:--|------|:---:|------|
-| C1 | OneBot 图片/文件消息类型扩展 | 🟡 | 当前只处理 Text 类型 → 扩展 Image/File MessageType |
-| C2 | 入站消息 sender 信息补全 | 🟡 | group/private conversation_name 自动生成 |
+| C1 | OneBot 图片/文件消息类型扩展 | ✅ | 根据消息段自动识别 Image/File/Text 类型 |
+| C2 | 入站消息 sender 信息补全 | ✅ | conversation_name 从 nickname/群号自动生成 |
 | C3 | 多平台支持框架就绪 | 🟢 | adapter 注册机制验证 (QQ 已有，可加 mock 测试微信) |
 
 ### 🟢 Phase D: 运维与部署
@@ -102,7 +104,10 @@
 └── [ ] GET /api/stats
 
 ⏳ Phase C-E: 完善 + 部署 → 目标 2026-05-05
-├── [ ] 图片/文件类型
+├── [✅] 图片/文件类型识别
+├── [✅] sender 信息补全
+├── [✅] Dispatcher Canceled 跳过
+├── [✅] Web 前端状态同步
 ├── [ ] Docker 部署
 └── [ ] 架构优化
 ```

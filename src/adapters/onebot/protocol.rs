@@ -136,6 +136,20 @@ impl MessageSegment {
             .collect::<Vec<_>>()
             .join("")
     }
+
+    /// 从消息段数组推断消息类型
+    pub fn segments_message_type(segments: &[MessageSegment]) -> &'static str {
+        for seg in segments {
+            match seg.seg_type.as_str() {
+                "image" => return "Image",
+                "video" => return "Image",
+                "record" => return "File",
+                "file" => return "File",
+                _ => {}
+            }
+        }
+        "Text"
+    }
 }
 
 // ========== 通知事件 ==========

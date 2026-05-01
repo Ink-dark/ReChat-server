@@ -96,6 +96,17 @@ impl MessageDispatcher {
                             }
                         };
 
+                        // Skip if the message was canceled between poll and dispatch
+                        if let Ok(Some(current)) = repo.get(&message.id)
+                            && current.status == MessageStatus::Canceled
+                        {
+                            tracing::info!(
+                                message_id = %message.id,
+                                "Skipping canceled message"
+                            );
+                            return;
+                        }
+
                         let mut sent = false;
 
                         for attempt in 0..=max_retries {
