@@ -34,7 +34,7 @@
 | A2 | `SenderConfig` 接入调度器 | ✅ | dispatcher.rs | max_retries / retry_interval / batch_size / concurrency |
 | A3 | 状态更新 + 原子认领 | ✅ | message.rs | update_message_status / increment_retry / try_claim_message |
 | A4 | 调度器生命周期管理 | ✅ | main.rs + dispatcher.rs | start / graceful shutdown via AtomicBool |
-| A5 | 集成测试 | 🔴 | tests/dispatcher.rs | 待补：模拟发送成功/失败/超时/最大重试 |
+| A5 | 集成测试 | ✅ | tests/dispatcher.rs | 5 场景：发送成功/失败重试/Canceled跳过/原子认领/优雅关闭 |
 
 ### 🟡 Phase B: API 补全 ✅ 已完成
 
@@ -97,11 +97,12 @@
 ├── 消息发送调度器: 轮询 + 重试 + 并发控制 + try_claim_message 原子认领
 ├── HTTP API 完整: list / PATCH / DELETE / stats + health
 ├── Web 前端: 6 状态卡片 / stats API 对接 / statusBadge() 徽章
-├── 44 个集成测试 (broadcaster 11 + protocol 21 + auth 7 + repo 5)
+├── 49 个测试全部通过 (broadcaster 11 + protocol 21 + auth 7 + sender 5 + dispatcher 5)
+├── try_claim_message 原子性修复 (跨周期重复认领消除)
 └── CI 格式合规
 
 ⏳ Next: 运维部署 + 架构优化 → 目标 2026-05-05
-├── [ ] Dispatcher 集成测试
+├── [✅] Dispatcher 集成测试 (5 场景全部通过)
 ├── [ ] Dockerfile + docker-compose
 ├── [ ] SQLite WAL 模式
 ├── [ ] 配置验证
