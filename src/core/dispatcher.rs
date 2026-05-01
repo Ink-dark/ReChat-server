@@ -60,24 +60,17 @@ impl MessageDispatcher {
                 }
 
                 let pending = match MessageRepository::new(&db_path) {
-                    Ok(repo) => repo
-                        .get_pending_messages(batch_size)
-                        .unwrap_or_default(),
+                    Ok(repo) => repo.get_pending_messages(batch_size).unwrap_or_default(),
                     Err(e) => {
                         tracing::error!(error = %e, "Dispatcher failed to read pending messages");
-                        tokio::time::sleep(
-                            tokio::time::Duration::from_secs(retry_interval_secs),
-                        )
-                        .await;
+                        tokio::time::sleep(tokio::time::Duration::from_secs(retry_interval_secs))
+                            .await;
                         continue;
                     }
                 };
 
                 if pending.is_empty() {
-                    tokio::time::sleep(
-                        tokio::time::Duration::from_secs(retry_interval_secs),
-                    )
-                    .await;
+                    tokio::time::sleep(tokio::time::Duration::from_secs(retry_interval_secs)).await;
                     continue;
                 }
 
@@ -115,9 +108,9 @@ impl MessageDispatcher {
                                     max_retries = max_retries,
                                     "Retrying message send"
                                 );
-                                tokio::time::sleep(
-                                    tokio::time::Duration::from_secs(retry_interval_secs),
-                                )
+                                tokio::time::sleep(tokio::time::Duration::from_secs(
+                                    retry_interval_secs,
+                                ))
                                 .await;
                             }
 
@@ -127,10 +120,9 @@ impl MessageDispatcher {
                                         message_id = %message.id,
                                         "Message sent successfully"
                                     );
-                                    if let Err(e) = repo.update_message_status(
-                                        &message.id,
-                                        &MessageStatus::Sent,
-                                    ) {
+                                    if let Err(e) = repo
+                                        .update_message_status(&message.id, &MessageStatus::Sent)
+                                    {
                                         tracing::error!(
                                             error = %e,
                                             message_id = %message.id,
@@ -162,10 +154,9 @@ impl MessageDispatcher {
                                 message_id = %message.id,
                                 "Message failed after all retries, marking as Failed"
                             );
-                            if let Err(e) = repo.update_message_status(
-                                &message.id,
-                                &MessageStatus::Failed,
-                            ) {
+                            if let Err(e) =
+                                repo.update_message_status(&message.id, &MessageStatus::Failed)
+                            {
                                 tracing::error!(
                                     error = %e,
                                     message_id = %message.id,

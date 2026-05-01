@@ -3,9 +3,9 @@ use rechat_sender::core::adapter::AdapterManager;
 use rechat_sender::core::dispatcher::MessageDispatcher;
 use rechat_sender::core::message::MessageRepository;
 use rechat_sender::models::message::{Message, MessageStatus, MessageType};
+use std::sync::Arc;
 use std::sync::atomic::AtomicU32;
 use std::sync::atomic::Ordering;
-use std::sync::Arc;
 
 struct MockAdapter {
     name: String,
@@ -36,10 +36,7 @@ impl Adapter for MockAdapter {
         Ok(())
     }
 
-    fn send_message(
-        &self,
-        _message: &Message,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    fn send_message(&self, _message: &Message) -> Result<(), Box<dyn std::error::Error>> {
         if self.should_fail {
             self.fail_count.fetch_add(1, Ordering::SeqCst);
             Err(Box::new(std::io::Error::new(
@@ -51,9 +48,7 @@ impl Adapter for MockAdapter {
         }
     }
 
-    fn receive_message(
-        &self,
-    ) -> Result<Option<Message>, Box<dyn std::error::Error>> {
+    fn receive_message(&self) -> Result<Option<Message>, Box<dyn std::error::Error>> {
         Ok(None)
     }
 }
@@ -88,8 +83,7 @@ async fn test_dispatcher_sends_pending_message() {
     shutdown.store(true, Ordering::Relaxed);
     tokio::time::sleep(std::time::Duration::from_millis(500)).await;
 
-    let repo2 =
-        MessageRepository::new(&temp_db.path().to_str().unwrap()).unwrap();
+    let repo2 = MessageRepository::new(&temp_db.path().to_str().unwrap()).unwrap();
     let updated = repo2.get(&msg.id).unwrap().unwrap();
     assert_eq!(updated.status, MessageStatus::Sent);
 }
@@ -123,8 +117,7 @@ async fn test_dispatcher_marks_as_failed_after_max_retries() {
     shutdown.store(true, Ordering::Relaxed);
     tokio::time::sleep(std::time::Duration::from_millis(500)).await;
 
-    let repo2 =
-        MessageRepository::new(&temp_db.path().to_str().unwrap()).unwrap();
+    let repo2 = MessageRepository::new(&temp_db.path().to_str().unwrap()).unwrap();
     let updated = repo2.get(&msg.id).unwrap().unwrap();
     assert_eq!(updated.status, MessageStatus::Failed);
     assert!(updated.retry_count > 0);
@@ -137,11 +130,7 @@ fn test_update_message_status() {
 
     let repo = MessageRepository::new(db_path).unwrap();
 
-    let msg = Message::new(
-        MessageType::Text,
-        "Status test".into(),
-        "user1".into(),
-    );
+    let msg = Message::new(MessageType::Text, "Status test".into(), "user1".into());
     repo.save(&msg).unwrap();
 
     repo.update_message_status(&msg.id, &MessageStatus::Sent)
@@ -158,11 +147,7 @@ fn test_increment_retry() {
 
     let repo = MessageRepository::new(db_path).unwrap();
 
-    let msg = Message::new(
-        MessageType::Text,
-        "Retry test".into(),
-        "user1".into(),
-    );
+    let msg = Message::new(MessageType::Text, "Retry test".into(), "user1".into());
     repo.save(&msg).unwrap();
 
     repo.increment_retry(&msg.id).unwrap();
