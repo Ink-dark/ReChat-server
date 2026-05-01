@@ -96,15 +96,24 @@ impl MessageDispatcher {
                             }
                         };
 
-                        // Skip if the message was canceled between poll and dispatch
-                        if let Ok(Some(current)) = repo.get(&message.id)
-                            && current.status == MessageStatus::Canceled
-                        {
-                            tracing::info!(
-                                message_id = %message.id,
-                                "Skipping canceled message"
-                            );
-                            return;
+                        // Atomically claim: only proceeds if Pending/Sending, not Canceled
+                        match repo.try_claim_message(&message.id) {
+                            Ok(true) => {}
+                            Ok(false) => {
+                                tracing::info!(
+                                    message_id = %message.id,
+                                    "Message already claimed or canceled, skipping"
+                                );
+                                return;
+                            }
+                            Err(e) => {
+                                tracing::error!(
+                                    error = %e,
+                                    message_id = %message.id,
+                                    "Failed to claim message"
+                                );
+                                return;
+                            }
                         }
 
                         let mut sent = false;

@@ -219,6 +219,20 @@ impl MessageRepository {
         Ok(())
     }
 
+    /// Atomically claim a message for sending: only succeeds if status is Pending or Sending.
+    /// Returns true if claimed, false if the message was already canceled/failed/sent.
+    pub fn try_claim_message(&self, id: &str) -> Result<bool> {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() as i64;
+        let affected = self.conn.execute(
+            "UPDATE messages SET status = 'Sending', updated_at = ?1 WHERE id = ?2 AND status IN ('Pending', 'Sending')",
+            rusqlite::params![now, id],
+        )?;
+        Ok(affected > 0)
+    }
+
     pub fn increment_retry(&self, id: &str) -> Result<()> {
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
