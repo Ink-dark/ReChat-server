@@ -1,7 +1,7 @@
+use rechat_sender::adapters::onebot::protocol as protocol_mod;
 use rechat_sender::adapters::onebot::protocol::{
     ActionRequest, ActionResponse, MessageSegment, OneBotEvent,
 };
-use rechat_sender::adapters::onebot::protocol as protocol_mod;
 use std::collections::HashMap;
 
 #[test]

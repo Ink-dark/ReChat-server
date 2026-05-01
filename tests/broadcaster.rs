@@ -20,7 +20,10 @@ fn make_broadcast_msg(platform: &str, conversation: &str, content: &str) -> Broa
     }
 }
 
-fn make_session(platforms: Vec<&str>, conversations: Vec<&str>) -> (ClientSession, mpsc::UnboundedReceiver<String>) {
+fn make_session(
+    platforms: Vec<&str>,
+    conversations: Vec<&str>,
+) -> (ClientSession, mpsc::UnboundedReceiver<String>) {
     let (tx, rx) = mpsc::unbounded_channel();
     let session = ClientSession {
         id: uuid::Uuid::new_v4().to_string(),
@@ -109,7 +112,7 @@ fn test_broadcast_filters_by_platform() {
     let msg = make_broadcast_msg("qq", "group_123", "QQ only");
     bc.broadcast_message("qq", "group_123", &msg);
 
-    assert!(rx_qq.try_recv().is_ok());  // QQ should receive
+    assert!(rx_qq.try_recv().is_ok()); // QQ should receive
     assert!(rx_wx.try_recv().is_err()); // WeChat should NOT
 }
 
@@ -137,7 +140,7 @@ fn test_broadcast_filters_by_conversation() {
     let msg = make_broadcast_msg("qq", "group_123", "To group 123");
     bc.broadcast_message("qq", "group_123", &msg);
 
-    assert!(rx1.try_recv().is_ok());  // session 1 subscribed group_123
+    assert!(rx1.try_recv().is_ok()); // session 1 subscribed group_123
     assert!(rx2.try_recv().is_err()); // session 2 only has group_789
 }
 
