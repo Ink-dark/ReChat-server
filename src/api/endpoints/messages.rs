@@ -170,12 +170,13 @@ pub async fn update_message(
     body: web::Json<PatchMessageRequest>,
 ) -> impl Responder {
     let new_status = match body.status.as_str() {
-        "Canceled" | "Failed" => crate::models::message::MessageStatus::Failed,
         "Pending" => crate::models::message::MessageStatus::Pending,
+        "Sending" => crate::models::message::MessageStatus::Sending,
+        "Sent" => crate::models::message::MessageStatus::Sent,
+        "Canceled" | "Failed" => crate::models::message::MessageStatus::Failed,
         _ => {
-            return HttpResponse::BadRequest().json(
-                serde_json::json!({"error": "Invalid status. Use Pending, Failed, or Canceled"}),
-            );
+            return HttpResponse::BadRequest()
+                .json(serde_json::json!({"error": "Invalid status. Use Pending, Sending, Sent, Failed, or Canceled"}));
         }
     };
 

@@ -100,7 +100,18 @@ impl AdapterManager {
     ) -> Vec<Result<(), Box<dyn std::error::Error>>> {
         self.adapters
             .iter()
-            .map(|adapter| adapter.send_message(message))
+            .map(|adapter| {
+                let result = adapter.send_message(message);
+                if let Err(ref e) = result {
+                    tracing::error!(
+                        adapter = %adapter.name(),
+                        message_id = %message.id,
+                        error = %e,
+                        "Failed to broadcast message to adapter"
+                    );
+                }
+                result
+            })
             .collect()
     }
 }

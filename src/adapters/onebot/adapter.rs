@@ -48,47 +48,90 @@ impl Adapter for OneBotAdapter {
                 .recipient
                 .strip_prefix("group_")
                 .and_then(|s| s.parse().ok())
-                .ok_or(format!(
-                    "Invalid group ID format in recipient: {}",
-                    message.recipient
-                ))?;
+                .ok_or_else(|| {
+                    let err = format!(
+                        "Invalid group ID format in recipient: {}",
+                        message.recipient
+                    );
+                    tracing::error!(
+                        message_id = %message.id,
+                        recipient = %message.recipient,
+                        "{}",
+                        err
+                    );
+                    err
+                })?;
             ("group", gid)
         } else if message.recipient.starts_with("private_") {
             let uid: i64 = message
                 .recipient
                 .strip_prefix("private_")
                 .and_then(|s| s.parse().ok())
-                .ok_or(format!(
-                    "Invalid private ID format in recipient: {}",
-                    message.recipient
-                ))?;
+                .ok_or_else(|| {
+                    let err = format!(
+                        "Invalid private ID format in recipient: {}",
+                        message.recipient
+                    );
+                    tracing::error!(
+                        message_id = %message.id,
+                        recipient = %message.recipient,
+                        "{}",
+                        err
+                    );
+                    err
+                })?;
             ("private", uid)
         } else {
-            let id: i64 = message.recipient.parse().ok().ok_or(format!(
-                "Unrecognized recipient format: {}",
-                message.recipient
-            ))?;
+            let id: i64 = message.recipient.parse().ok().ok_or_else(|| {
+                let err = format!("Unrecognized recipient format: {}", message.recipient);
+                tracing::error!(
+                    message_id = %message.id,
+                    recipient = %message.recipient,
+                    "{}",
+                    err
+                );
+                err
+            })?;
             ("group", id)
         };
 
         let action =
             protocol::build_send_msg_action(message_type, target_id, &segments, Some(&message.id));
 
-        let sender = self
-            .sender
-            .lock()
-            .map_err(|e| format!("OneBot sender mutex poisoned: {}", e))?;
+        let sender = self.sender.lock().map_err(|e| {
+            let err = format!("OneBot sender mutex poisoned: {}", e);
+            tracing::error!(
+                message_id = %message.id,
+                adapter = %self.name,
+                "{}",
+                err
+            );
+            err
+        })?;
 
-        sender
-            .as_ref()
-            .ok_or("OneBot sender not initialized")?
-            .send(action)
-            .map_err(|e| format!("Failed to send OneBot action: {}", e))?;
+        let sender_ref = sender.as_ref().ok_or_else(|| {
+            let err = format!("OneBot sender not initialized for adapter '{}'", self.name);
+            tracing::error!(message_id = %message.id, adapter = %self.name, "{}", err);
+            err
+        })?;
+
+        sender_ref.send(action).map_err(|e| {
+            let err = format!("Failed to send OneBot action: {}", e);
+            tracing::error!(
+                message_id = %message.id,
+                adapter = %self.name,
+                conversation = %message.recipient,
+                "{}",
+                err
+            );
+            err
+        })?;
 
         tracing::info!(
             message_id = %message.id,
             conversation = %message.recipient,
-            "OneBot message sent"
+            adapter = %self.name,
+            "OneBot message sent successfully"
         );
         Ok(())
     }
