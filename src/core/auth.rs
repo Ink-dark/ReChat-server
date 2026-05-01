@@ -1,7 +1,5 @@
-use actix_web::web;
-
-pub fn validate_token(token: &web::Data<String>, query: &str) -> bool {
-    token.get_ref() == query
+pub fn validate_token(expected: &str, provided: &str) -> bool {
+    expected == provided
 }
 
 pub fn extract_token_from_query(query: &str) -> Option<&str> {
