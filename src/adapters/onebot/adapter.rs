@@ -64,14 +64,10 @@ impl Adapter for OneBotAdapter {
                 ))?;
             ("private", uid)
         } else {
-            let id: i64 = message
-                .recipient
-                .parse()
-                .ok()
-                .ok_or(format!(
-                    "Unrecognized recipient format: {}",
-                    message.recipient
-                ))?;
+            let id: i64 = message.recipient.parse().ok().ok_or(format!(
+                "Unrecognized recipient format: {}",
+                message.recipient
+            ))?;
             ("group", id)
         };
 
