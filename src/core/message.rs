@@ -14,6 +14,8 @@ fn read_message_row(
         "Text" => MessageType::Text,
         "Image" => MessageType::Image,
         "File" => MessageType::File,
+        "Video" => MessageType::Video,
+        "Audio" => MessageType::Audio,
         _ => return None,
     };
     let status = match status_str.as_str() {
@@ -121,6 +123,8 @@ impl MessageRepository {
                 "Text" => crate::models::message::MessageType::Text,
                 "Image" => crate::models::message::MessageType::Image,
                 "File" => crate::models::message::MessageType::File,
+                "Video" => crate::models::message::MessageType::Video,
+                "Audio" => crate::models::message::MessageType::Audio,
                 _ => return Err(rusqlite::Error::InvalidQuery),
             };
 
@@ -175,6 +179,8 @@ impl MessageRepository {
                 "Text" => crate::models::message::MessageType::Text,
                 "Image" => crate::models::message::MessageType::Image,
                 "File" => crate::models::message::MessageType::File,
+                "Video" => crate::models::message::MessageType::Video,
+                "Audio" => crate::models::message::MessageType::Audio,
                 _ => continue,
             };
 

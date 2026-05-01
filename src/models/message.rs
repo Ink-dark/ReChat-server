@@ -6,6 +6,8 @@ pub enum MessageType {
     Text,
     Image,
     File,
+    Video,
+    Audio,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]

@@ -175,6 +175,8 @@ async fn handle_command(
             let msg_type = match message_type.as_str() {
                 "Image" => MessageType::Image,
                 "File" => MessageType::File,
+                "Video" => MessageType::Video,
+                "Audio" => MessageType::Audio,
                 _ => MessageType::Text,
             };
 

@@ -61,8 +61,10 @@ pub fn run(repo: Arc<RwLock<MessageRepository>>) {
                 "text" => MessageType::Text,
                 "image" => MessageType::Image,
                 "file" => MessageType::File,
+                "video" => MessageType::Video,
+                "audio" => MessageType::Audio,
                 _ => {
-                    println!("Invalid message type. Use text, image, or file.");
+                    println!("Invalid message type. Use text, image, file, video, or audio.");
                     return;
                 }
             };

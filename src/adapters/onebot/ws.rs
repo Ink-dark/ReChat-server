@@ -158,6 +158,8 @@ fn handle_message_event(broadcaster: &MessageBroadcaster, event: MessageEvent) {
     let message_type = match msg_type_str {
         "Image" => MessageType::Image,
         "File" => MessageType::File,
+        "Video" => MessageType::Video,
+        "Audio" => MessageType::Audio,
         _ => MessageType::Text,
     };
 

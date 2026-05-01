@@ -149,6 +149,18 @@ fn internal_message_to_segments(message: &Message) -> Vec<MessageSegment> {
         crate::models::message::MessageType::Image => {
             vec![MessageSegment::image(&message.content)]
         }
+        crate::models::message::MessageType::Video => {
+            vec![MessageSegment::text(&format!(
+                "[Video: {}]",
+                message.content
+            ))]
+        }
+        crate::models::message::MessageType::Audio => {
+            vec![MessageSegment::text(&format!(
+                "[Audio: {}]",
+                message.content
+            ))]
+        }
         crate::models::message::MessageType::File => {
             vec![MessageSegment::text(&format!(
                 "[File: {}]",

@@ -55,9 +55,11 @@ pub async fn create_message(
         "Text" => MessageType::Text,
         "Image" => MessageType::Image,
         "File" => MessageType::File,
+        "Video" => MessageType::Video,
+        "Audio" => MessageType::Audio,
         _ => {
             return HttpResponse::BadRequest()
-                .json(serde_json::json!({"error": "Invalid message type"}));
+                .json(serde_json::json!({"error": "Invalid message type. Use Text, Image, File, Video, or Audio"}));
         }
     };
 
