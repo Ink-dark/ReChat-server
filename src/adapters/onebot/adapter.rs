@@ -43,24 +43,35 @@ impl Adapter for OneBotAdapter {
     fn send_message(&self, message: &Message) -> Result<(), Box<dyn std::error::Error>> {
         let segments = internal_message_to_segments(message);
 
-        // Determine if group or private based on conversation ID format
         let (message_type, target_id) = if message.recipient.starts_with("group_") {
             let gid: i64 = message
                 .recipient
                 .strip_prefix("group_")
                 .and_then(|s| s.parse().ok())
-                .unwrap_or(0);
+                .ok_or(format!(
+                    "Invalid group ID format in recipient: {}",
+                    message.recipient
+                ))?;
             ("group", gid)
         } else if message.recipient.starts_with("private_") {
             let uid: i64 = message
                 .recipient
                 .strip_prefix("private_")
                 .and_then(|s| s.parse().ok())
-                .unwrap_or(0);
+                .ok_or(format!(
+                    "Invalid private ID format in recipient: {}",
+                    message.recipient
+                ))?;
             ("private", uid)
         } else {
-            // Try to parse as numeric; default to group
-            let id: i64 = message.recipient.parse().ok().unwrap_or(0);
+            let id: i64 = message
+                .recipient
+                .parse()
+                .ok()
+                .ok_or(format!(
+                    "Unrecognized recipient format: {}",
+                    message.recipient
+                ))?;
             ("group", id)
         };
 
