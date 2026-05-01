@@ -32,6 +32,7 @@ async fn auth_verify(body: web::Json<serde_json::Value>, token: web::Data<String
     if token.get_ref() == provided {
         actix_web::HttpResponse::Ok().json(serde_json::json!({"valid": true}))
     } else {
-        actix_web::HttpResponse::Unauthorized().json(serde_json::json!({"valid": false, "error": "Invalid token"}))
+        actix_web::HttpResponse::Unauthorized()
+            .json(serde_json::json!({"valid": false, "error": "Invalid token"}))
     }
 }
