@@ -122,7 +122,7 @@ impl MessageRepository {
     pub fn get_pending_messages(&self, limit: usize) -> Result<Vec<Message>> {
         let mut stmt = self.conn.prepare(
             "SELECT id, message_type, content, recipient, status, created_at, updated_at, retry_count 
-             FROM messages WHERE status = 'Pending' OR status = 'Sending' LIMIT ?",
+             FROM messages WHERE status = 'Pending' OR status = 'Sending' ORDER BY created_at ASC LIMIT ?",
         )?;
         let mut rows = stmt.query([&limit])?;
         let mut messages = Vec::new();
@@ -170,5 +170,29 @@ impl MessageRepository {
         }
 
         Ok(messages)
+    }
+
+    pub fn update_message_status(&self, id: &str, status: &MessageStatus) -> Result<()> {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() as i64;
+        self.conn.execute(
+            "UPDATE messages SET status = ?1, updated_at = ?2 WHERE id = ?3",
+            rusqlite::params![format!("{:?}", status), now, id],
+        )?;
+        Ok(())
+    }
+
+    pub fn increment_retry(&self, id: &str) -> Result<()> {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() as i64;
+        self.conn.execute(
+            "UPDATE messages SET retry_count = retry_count + 1, updated_at = ?1 WHERE id = ?2",
+            rusqlite::params![now, id],
+        )?;
+        Ok(())
     }
 }

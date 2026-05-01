@@ -8,7 +8,7 @@ pub enum MessageType {
     File,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub enum MessageStatus {
     Pending,
     Sending,

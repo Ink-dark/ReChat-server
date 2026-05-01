@@ -71,6 +71,17 @@ async fn main() -> std::io::Result<()> {
     adapter_manager.start_all();
     plugin_manager.initialize_all();
 
+    let sender_cfg = &config.sender;
+    let dispatcher = core::dispatcher::MessageDispatcher::new(
+        adapter_manager.clone(),
+        db_path.clone(),
+        sender_cfg.max_retries,
+        sender_cfg.retry_interval,
+        sender_cfg.batch_size,
+        sender_cfg.concurrency,
+    );
+    dispatcher.start();
+
     tracing::info!(
         host = %config.server.host,
         port = config.server.port,
