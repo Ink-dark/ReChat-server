@@ -35,7 +35,10 @@ pub async fn onebot_ws(
     let (action_tx, mut action_rx) = mpsc::unbounded_channel::<ActionRequest>();
     // Store the sender so the adapter can use it later
     {
-        let mut sender = onebot_sender.lock().unwrap();
+        let mut sender = onebot_sender.lock().map_err(|e| {
+            tracing::error!("Failed to acquire OneBot sender lock: {}", e);
+            actix_web::error::ErrorInternalServerError("Internal server error")
+        })?;
         *sender = Some(action_tx);
     }
 

@@ -14,6 +14,7 @@ pub enum MessageStatus {
     Sending,
     Sent,
     Failed,
+    Canceled,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

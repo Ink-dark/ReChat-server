@@ -198,7 +198,20 @@ async fn handle_command(
             }
 
             if let Err(e) = adapter_manager.send_to_adapter(&platform, &message) {
-                tracing::warn!(platform = %platform, error = %e, "No adapter found for platform");
+                tracing::error!(
+                    platform = %platform,
+                    message_id = %message.id,
+                    error = %e,
+                    "Failed to send message via adapter"
+                );
+                crate::REPO.with(|repo| {
+                    if let Some(r) = repo.borrow().as_ref() {
+                        let _ = r.update_message_status(
+                            &message.id,
+                            &crate::models::message::MessageStatus::Failed,
+                        );
+                    }
+                });
             }
 
             let now = message
