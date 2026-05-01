@@ -21,6 +21,7 @@ fn read_message_row(
         "Sending" => MessageStatus::Sending,
         "Sent" => MessageStatus::Sent,
         "Failed" => MessageStatus::Failed,
+        "Canceled" => MessageStatus::Canceled,
         _ => return None,
     };
     let created_at = std::time::UNIX_EPOCH + std::time::Duration::from_secs(created_at_secs as u64);
@@ -128,6 +129,7 @@ impl MessageRepository {
                 "Sending" => MessageStatus::Sending,
                 "Sent" => MessageStatus::Sent,
                 "Failed" => MessageStatus::Failed,
+                "Canceled" => MessageStatus::Canceled,
                 _ => return Err(rusqlite::Error::InvalidQuery),
             };
 
@@ -181,6 +183,7 @@ impl MessageRepository {
                 "Sending" => MessageStatus::Sending,
                 "Sent" => MessageStatus::Sent,
                 "Failed" => MessageStatus::Failed,
+                "Canceled" => MessageStatus::Canceled,
                 _ => continue,
             };
 

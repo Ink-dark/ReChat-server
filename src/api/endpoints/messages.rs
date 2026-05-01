@@ -173,7 +173,8 @@ pub async fn update_message(
         "Pending" => crate::models::message::MessageStatus::Pending,
         "Sending" => crate::models::message::MessageStatus::Sending,
         "Sent" => crate::models::message::MessageStatus::Sent,
-        "Canceled" | "Failed" => crate::models::message::MessageStatus::Failed,
+        "Canceled" => crate::models::message::MessageStatus::Canceled,
+        "Failed" => crate::models::message::MessageStatus::Failed,
         _ => {
             return HttpResponse::BadRequest()
                 .json(serde_json::json!({"error": "Invalid status. Use Pending, Sending, Sent, Failed, or Canceled"}));
