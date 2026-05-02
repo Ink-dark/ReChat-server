@@ -1,21 +1,44 @@
 # ReChat-sender 部署文档
 
-## 1. 环境要求
+## 1. 项目特点
 
-- Rust 1.70+（推荐使用最新稳定版本）
-- Cargo（Rust 包管理工具）
-- Windows 操作系统（目前仅支持Windows）
+ReChat-sender 是一个纯 Rust 编写的消息聚合服务，具有以下优势：
 
-## 2. 构建步骤
+- **零外部依赖**：所有依赖都静态编译进二进制文件，无需安装任何运行时库
+- **开箱即用**：SQLite 数据库使用 bundled 模式，无需安装数据库服务
+- **跨平台支持**：支持 Windows、Linux、macOS
+- **高性能**：基于 Tokio 异步运行时和 Actix-web 框架
 
-### 2.1 克隆代码库
+## 2. 环境要求
+
+仅需安装 Rust 工具链：
+
+- Rust 1.70+ (推荐使用最新稳定版)
+- Cargo (随 Rust 一起安装)
+
+### 安装 Rust
+
+**Linux/macOS**：
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source $HOME/.cargo/env
+```
+
+**Windows**：
+下载并运行 [rustup-init.exe](https://win.rustup.rs/)
+
+## 3. 构建项目
+
+### 3.1 克隆代码库
 
 ```bash
 git clone <repository-url>
 cd ReChat-sender
 ```
 
-### 2.2 构建项目
+### 3.2 标准构建（推荐）
+
+构建完全无外部依赖的二进制文件：
 
 ```bash
 # 开发环境构建
@@ -25,78 +48,199 @@ cargo build
 cargo build --release
 ```
 
-### 2.3 使用构建脚本
+构建成功后，二进制文件位于：
+- Linux/macOS: `./target/release/rechat-sender`
+- Windows: `.\target\release\rechat-sender.exe`
 
-项目根目录下提供了构建脚本，可以简化构建过程：
+### 3.3 可选特性
+
+如果需要 Redis 支持，可以启用 `redis-support` 特性：
 
 ```bash
-# 运行构建脚本
-rustc scripts/build.rs && ./build
+cargo build --release --features redis-support
 ```
 
-构建完成后，可执行文件将位于 `build/rechat-sender` 目录。
+## 4. 运行服务
 
-## 3. 运行服务
-
-### 3.1 直接运行
+### 4.1 直接运行
 
 ```bash
-# 开发环境
-cargo run
-
-# 生产环境
+# Linux/macOS
 ./target/release/rechat-sender
+
+# Windows
+.\target\release\rechat-sender.exe
 ```
 
-### 3.2 作为服务运行
+### 4.2 使用配置文件
 
-在 Windows 系统中，可以使用 `sc` 命令将 ReChat-sender 注册为系统服务：
+可以通过 JSON 配置文件自定义配置：
 
-```powershell
-# 以管理员身份运行 PowerShell
-sc create ReChatSender binPath= "C:\path\to\rechat-sender.exe" start= auto
-sc start ReChatSender
+```bash
+./target/release/rechat-sender --config config.json
 ```
 
-## 4. 配置
-
-### 4.1 配置文件
-
-ReChat-sender 使用默认配置，也可以通过创建 `config.json` 文件来自定义配置：
+`config.json` 示例：
 
 ```json
 {
   "server": {
-    "host": "127.0.0.1",
+    "host": "0.0.0.0",
     "port": 8080,
-    "workers": 1
-  },
-  "redis": {
-    "url": "redis://localhost:6379",
-    "queue_name": "rechat_messages"
+    "workers": 4,
+    "web_ui": true,
+    "web_ui_port": 8081
   },
   "database": {
-    "path": "./rechat.db"
+    "path": "./rechat.db",
+    "max_connections": 5,
+    "connection_timeout": 3
   },
   "sender": {
     "max_retries": 3,
     "retry_interval": 5,
-    "batch_size": 10
-  }
+    "batch_size": 10,
+    "concurrency": 5
+  },
+  "adapters": [],
+  "plugins": []
 }
 ```
 
-### 4.2 环境变量
+## 5. 跨平台构建
 
-也可以通过环境变量来覆盖配置：
+### 5.1 构建 Windows 版本（在 Linux/macOS 上）
 
-- `RECHAT_SERVER_HOST`：服务器主机
-- `RECHAT_SERVER_PORT`：服务器端口
-- `RECHAT_DATABASE_PATH`：数据库文件路径
+```bash
+# 安装目标平台
+rustup target add x86_64-pc-windows-gnu
 
-## 5. API 接口
+# 安装 MinGW-w64 工具链（Ubuntu）
+sudo apt install mingw-w64
 
-### 5.1 发送消息
+# 构建
+cargo build --release --target x86_64-pc-windows-gnu
+```
+
+### 5.2 构建 Linux 版本（在 Windows 上）
+
+使用 WSL (Windows Subsystem for Linux) 是最简单的方式。
+
+### 5.3 构建 macOS 版本
+
+在 macOS 上直接构建即可：
+
+```bash
+# Intel 芯片
+cargo build --release --target x86_64-apple-darwin
+
+# Apple Silicon (M1/M2)
+cargo build --release --target aarch64-apple-darwin
+
+# 通用二进制 (Universal 2)
+rustup target add x86_64-apple-darwin aarch64-apple-darwin
+cargo build --release --target x86_64-apple-darwin
+cargo build --release --target aarch64-apple-darwin
+lipo -create -output ./target/release/rechat-sender-universal \
+  ./target/x86_64-apple-darwin/release/rechat-sender \
+  ./target/aarch64-apple-darwin/release/rechat-sender
+```
+
+## 6. 作为服务运行
+
+### 6.1 Linux (systemd)
+
+创建 `/etc/systemd/system/rechat-sender.service`：
+
+```ini
+[Unit]
+Description=ReChat Message Sender Service
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/rechat-sender
+ExecStart=/opt/rechat-sender/rechat-sender
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+启用并启动服务：
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable rechat-sender
+sudo systemctl start rechat-sender
+sudo systemctl status rechat-sender
+```
+
+### 6.2 Windows (系统服务)
+
+使用 NSSM (Non-Sucking Service Manager) 将其注册为 Windows 服务：
+
+```powershell
+# 下载 NSSM
+# 以管理员身份运行 PowerShell
+
+nssm install ReChatSender
+# 在弹出的对话框中设置：
+# Path: C:\path\to\rechat-sender.exe
+# Startup directory: C:\path\to\
+
+nssm start ReChatSender
+```
+
+或者使用 Windows 的 `sc` 命令：
+
+```powershell
+sc create ReChatSender binPath= "C:\path\to\rechat-sender.exe" start= auto
+sc start ReChatSender
+```
+
+### 6.3 macOS (launchd)
+
+创建 `~/Library/LaunchAgents/com.rechat.sender.plist`：
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.rechat.sender</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/rechat-sender/rechat-sender</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>WorkingDirectory</key>
+    <string>/opt/rechat-sender</string>
+</dict>
+</plist>
+```
+
+加载服务：
+
+```bash
+launchctl load ~/Library/LaunchAgents/com.rechat.sender.plist
+```
+
+## 7. API 接口
+
+### 7.1 健康检查
+
+```bash
+GET /api/health
+```
+
+### 7.2 发送消息
 
 ```bash
 POST /api/messages
@@ -109,88 +253,88 @@ Content-Type: application/json
 }
 ```
 
-### 5.2 获取消息状态
+### 7.3 获取消息列表
+
+```bash
+GET /api/messages?offset=0&limit=10
+```
+
+### 7.4 获取单条消息
 
 ```bash
 GET /api/messages/{id}
 ```
 
-### 5.3 健康检查
+## 8. Web 界面
 
-```bash
-GET /api/health
-```
+服务启动后，可以通过浏览器访问 Web 管理界面：
 
-## 6. Web 界面
+- 首页: `http://localhost:8080`
+- 使用访问令牌登录（启动时会在控制台显示）
 
-ReChat-sender 提供了基于 Web 的图形化界面：
+## 9. 日志和故障排除
 
-- 首页：`http://localhost:8080/`
-- 发送消息：`http://localhost:8080/send`
-- 查看状态：`http://localhost:8080/status`
+### 9.1 查看日志
 
-## 7. 命令行界面
-
-ReChat-sender 也提供了命令行界面：
-
-### 7.1 发送消息
-
-```bash
-rechat-sender send --type text --recipient user1 --content "Hello, world!"
-```
-
-### 7.2 查看消息状态
-
-```bash
-rechat-sender status --id <message-id>
-```
-
-## 8. 故障排除
-
-### 8.1 常见问题
-
-1. **端口被占用**：修改配置文件中的 `server.port` 字段，使用不同的端口。
-
-2. **数据库文件权限**：确保应用程序有足够的权限读写数据库文件。
-
-3. **Redis 连接失败**：确保 Redis 服务正在运行，并且配置文件中的 Redis URL 正确。
-
-### 8.2 日志
-
-ReChat-sender 的日志输出到标准输出，可通过重定向来保存日志：
+日志输出到标准输出，可以重定向到文件：
 
 ```bash
 ./rechat-sender > rechat.log 2>&1
 ```
 
-## 9. 升级
-
-### 9.1 更新代码
+使用 systemd 时：
 
 ```bash
+sudo journalctl -u rechat-sender -f
+```
+
+### 9.2 常见问题
+
+1. **端口被占用**
+   
+   修改配置文件中的 `server.port` 字段，或使用环境变量：
+   ```bash
+   export RECHAT_SERVER_PORT=9090
+   ./rechat-sender
+   ```
+
+2. **数据库文件权限**
+   
+   确保程序有读写数据库文件的权限，数据库文件位置由 `database.path` 配置。
+
+3. **访问令牌**
+   
+   每次启动服务都会生成新的访问令牌，检查控制台输出获取。
+
+## 10. 安全建议
+
+1. **绑定到特定 IP**
+   
+   生产环境中建议绑定到 `127.0.0.1` 或内网 IP，避免暴露到公网。
+
+2. **防火墙配置**
+   
+   使用防火墙限制访问端口。
+
+3. **数据备份**
+   
+   定期备份 `rechat.db` 数据库文件。
+
+## 11. 升级
+
+```bash
+# 拉取最新代码
 git pull
+
+# 重新构建
 cargo build --release
+
+# 停止旧服务
+sudo systemctl stop rechat-sender
+
+# 替换二进制文件
+cp target/release/rechat-sender /opt/rechat-sender/
+
+# 启动新服务
+sudo systemctl start rechat-sender
 ```
-
-### 9.2 重启服务
-
-如果以服务方式运行，需要重启服务：
-
-```powershell
-sc stop ReChatSender
-sc start ReChatSender
-```
-
-## 10. 安全性
-
-### 10.1 注意事项
-
-- 目前 ReChat-sender 没有实现身份验证，建议在内部网络中使用。
-- 生产环境中建议配置防火墙，限制访问端口。
-- 定期备份数据库文件，防止数据丢失。
-
-### 10.2 未来改进
-
-- 添加身份验证和授权机制
-- 实现 HTTPS 支持
-- 添加数据加密功能

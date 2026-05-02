@@ -6,6 +6,7 @@ use std::path::Path;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
     pub server: ServerConfig,
+    #[cfg(feature = "redis-support")]
     pub redis: RedisConfig,
     pub database: DatabaseConfig,
     pub sender: SenderConfig,
@@ -22,6 +23,7 @@ pub struct ServerConfig {
     pub web_ui_port: u16,
 }
 
+#[cfg(feature = "redis-support")]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RedisConfig {
     pub url: String,
@@ -80,6 +82,7 @@ impl Default for Config {
                 web_ui: true,
                 web_ui_port: 8081,
             },
+            #[cfg(feature = "redis-support")]
             redis: RedisConfig {
                 url: "redis://localhost:6379".to_string(),
                 queue_name: "rechat_messages".to_string(),

@@ -1,12 +1,17 @@
+#[cfg(feature = "redis-support")]
 use crate::models::message::Message;
+#[cfg(feature = "redis-support")]
 use redis::{Client, Commands};
+#[cfg(feature = "redis-support")]
 use serde_json;
 
+#[cfg(feature = "redis-support")]
 pub struct MessageQueue {
     client: Client,
     queue_name: String,
 }
 
+#[cfg(feature = "redis-support")]
 impl MessageQueue {
     pub fn new(url: &str, queue_name: &str) -> Result<Self, Box<dyn std::error::Error>> {
         let client = Client::open(url)?;
