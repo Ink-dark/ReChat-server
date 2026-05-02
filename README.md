@@ -3,7 +3,7 @@
 > 消息集合平台 — 连接 QQ（NapCat/OneBot），实时推送，Web 管理
 
 [![CI](https://github.com/Ink-dark/ReChat-server/actions/workflows/ci.yml/badge.svg)](https://github.com/Ink-dark/ReChat-server/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-Apache-blue.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](https://www.rust-lang.org)
 
 **ReChat** 是一个基于 Rust + Actix-web 构建的消息集合平台，通过 OneBot v11 协议接入 NapCat/QQ，将所有消息汇聚到一个中心，并通过 WebSocket 实时推送到 Web 管理界面。
